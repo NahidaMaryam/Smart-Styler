@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import Layout from '@/components/layout/Layout';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shirt, Pants, Shoe, Upload, Tag, Plus, RefreshCw } from 'lucide-react';
+import { Shirt, Footprints, Tag, Upload, Plus, RefreshCw } from 'lucide-react';
 
 interface ClothingItem {
   id: string;
@@ -30,7 +29,6 @@ const Wardrobe = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
-  // Sample color and season options
   const colorOptions = ["Red", "Blue", "Green", "Black", "White", "Navy", "Brown", "Gray", "Beige"];
   const seasonOptions = ["Spring", "Summer", "Fall", "Winter", "All Seasons"];
   
@@ -39,14 +37,11 @@ const Wardrobe = () => {
     if (file) {
       setProcessing(true);
       
-      // Read the file as data URL
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Simulate background removal processing delay
         setTimeout(() => {
           const imageUrl = reader.result as string;
           
-          // Create new clothing item
           const newItem: ClothingItem = {
             id: Date.now().toString(),
             image: imageUrl,
@@ -59,7 +54,6 @@ const Wardrobe = () => {
           setItems(prev => [...prev, newItem]);
           setProcessing(false);
           
-          // Reset form
           if (fileInputRef.current) fileInputRef.current.value = '';
           setCustomTag("");
           
@@ -73,21 +67,19 @@ const Wardrobe = () => {
     }
   };
   
-  // Filter items based on active tab
   const filteredItems = items.filter(item => {
     if (activeTab === "all") return true;
     return item.type === activeTab;
   });
   
-  // Get icon based on item type
   const getItemTypeIcon = (type: string) => {
     switch (type) {
       case "tops":
         return <Shirt className="w-5 h-5" />;
       case "bottoms":
-        return <Pants className="w-5 h-5" />;
+        return <Tag className="w-5 h-5 rotate-90" />;
       case "shoes":
-        return <Shoe className="w-5 h-5" />;
+        return <Footprints className="w-5 h-5" />;
       default:
         return <Tag className="w-5 h-5" />;
     }
@@ -102,7 +94,6 @@ const Wardrobe = () => {
         </p>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Upload Area */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
@@ -201,7 +192,6 @@ const Wardrobe = () => {
             </Card>
           </div>
           
-          {/* Right Column - Wardrobe Items */}
           <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-6">
