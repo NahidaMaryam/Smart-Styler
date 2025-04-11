@@ -32,3 +32,68 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
+
+/* Enhanced glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Enhanced card design */
+.enhanced-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.enhanced-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Feature icon container */
+.feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+}
+
+/* Decorative elements */
+.decorative-dot {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.5;
+  filter: blur(10px);
+  z-index: -1;
+}
+
+.dot-1 {
+  width: 150px;
+  height: 150px;
+  background: var(--accent);
+  top: 5%;
+  right: 10%;
+  opacity: 0.15;
+}
+
+.dot-2 {
+  width: 200px;
+  height: 200px;
+  background: var(--primary);
+  bottom: 10%;
+  left: 5%;
+  opacity: 0.1;
+}
