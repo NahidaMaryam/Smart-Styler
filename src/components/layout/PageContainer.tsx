@@ -11,7 +11,7 @@ const PageContainer: React.FC<PageContainerProps> = ({
   className = "" 
 }) => {
   return (
-    <div className={`container max-w-7xl py-8 px-4 md:px-8 ${className}`}>
+    <div className={`container max-w-7xl py-10 md:py-12 px-4 md:px-8 lg:px-10 animate-fade-in ${className}`}>
       {children}
     </div>
   );
