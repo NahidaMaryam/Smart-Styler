@@ -32,3 +32,38 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
+
+/* Image upload styling */
+.image-upload {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.image-upload input[type="file"] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Image preview */
+.image-preview {
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+/* Generated image effects */
+.generated-image {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.generated-image:hover {
+  border-color: var(--primary);
+  transform: scale(1.02);
+}
