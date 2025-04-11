@@ -61,9 +61,18 @@
 .generated-image {
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  max-width: 100%;
+  height: auto;
 }
 
 .generated-image:hover {
   border-color: var(--primary);
   transform: scale(1.02);
+}
+
+/* Dialog image styling */
+.dialog-image {
+  max-height: 60vh;
+  max-width: 100%;
+  object-fit: contain;
 }

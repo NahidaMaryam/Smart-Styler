@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
@@ -14,6 +15,7 @@ import {
   DialogTitle, 
   DialogDescription 
 } from '@/components/ui/dialog';
+import { toast } from "@/hooks/use-toast";
 
 interface Message {
   id: number;
@@ -56,6 +58,16 @@ const AIStylist = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Image too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (event) => {
         const imageDataUrl = event.target?.result as string;
@@ -105,23 +117,23 @@ const AIStylist = () => {
     setIsTyping(true);
     
     setTimeout(() => {
-      // Generate a mock outfit rating response
+      // Generate a mock outfit rating response with real image assets
       const ratingResponses = [
         {
           text: "This outfit looks great! I love how you've paired these colors. The fit is excellent and the style suits you well. I'd rate it 9/10. Would you like to see a similar outfit recommendation?",
-          generatedImage: "/placeholder.svg"
+          generatedImage: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=720"
         },
         {
           text: "Nice outfit choice! The combination works well, though I might suggest adding an accessory to enhance it. Overall, it's a solid 7/10. Would you like to see a similar outfit with my suggested improvements?",
-          generatedImage: "/placeholder.svg"
+          generatedImage: "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?q=80&w=720"
         },
         {
           text: "Interesting outfit! The color palette is cohesive, but the proportions could be improved. I'd rate it 6/10. I can suggest a similar style with better balance if you'd like?",
-          generatedImage: "/placeholder.svg"
+          generatedImage: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=720"
         },
         {
           text: "Excellent outfit composition! The textures and colors complement each other perfectly. This is definitely a 10/10. Would you like to see other outfit ideas in this style?",
-          generatedImage: "/placeholder.svg"
+          generatedImage: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=720"
         }
       ];
       
@@ -300,7 +312,8 @@ const AIStylist = () => {
           // Pick a random response from the options
           const randomResponse = responses[Math.floor(Math.random() * responses.length)];
           response = randomResponse.text;
-          generatedImage = randomResponse.image;
+          // Replace placeholder with actual images
+          generatedImage = getOutfitImageForCategory(keyword);
           foundKeyword = true;
           break;
         }
@@ -311,24 +324,20 @@ const AIStylist = () => {
         const generalResponses = [
           {
             text: "Based on color analysis, I'd recommend focusing on warm earth tones like olive green, rust, and gold for your wardrobe. These complement most skin tones beautifully. Could you tell me about a specific occasion you're shopping for?",
-            image: "/placeholder.svg"
           },
           {
             text: "Your style profile suggests you prefer timeless pieces over trends. I'd recommend investing in quality basics in neutral colors, then adding personality with accessories. What type of outfit are you planning?",
-            image: "/placeholder.svg"
           },
           {
             text: "Looking at your preferences, I think you'd benefit from a capsule wardrobe approach - focusing on versatile pieces that mix and match easily. Would you like suggestions for specific items that would work well together?",
-            image: "/placeholder.svg"
           },
           {
             text: "I notice you haven't specified an occasion. For everyday style, I recommend the 'rule of three' - combining at least three pieces (like top, bottom, and layer or accessory) to create a complete look. What kind of outfits do you typically wear?",
-            image: "/placeholder.svg"
           }
         ];
         const randomResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
         response = randomResponse.text;
-        generatedImage = randomResponse.image;
+        generatedImage = getOutfitImageForCategory('casual');
       }
       
       const aiMessage: Message = {
@@ -341,7 +350,61 @@ const AIStylist = () => {
       
       setMessages(prev => [...prev, aiMessage]);
       setIsTyping(false);
-    }, Math.random() * 1000 + 1500); // Vary response time between 1.5-2.5 seconds for realism
+    }, Math.random() * 1000 + 1500);
+  };
+
+  // Helper function to get real image URLs for outfit categories
+  const getOutfitImageForCategory = (category: string) => {
+    const imageMap: Record<string, string[]> = {
+      party: [
+        "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=720",
+        "https://images.unsplash.com/photo-1623880840102-7df0a9f3545b?q=80&w=720"
+      ],
+      work: [
+        "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?q=80&w=720",
+        "https://images.unsplash.com/photo-1603205319065-6ffcd6c454cc?q=80&w=720"
+      ],
+      casual: [
+        "https://images.unsplash.com/photo-1509551388413-e18d0ac5d495?q=80&w=720",
+        "https://images.unsplash.com/photo-1551489186-cf8726f514f5?q=80&w=720"
+      ],
+      date: [
+        "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?q=80&w=720",
+        "https://images.unsplash.com/photo-1618721405821-80ebc4b63d26?q=80&w=720"
+      ],
+      spring: [
+        "https://images.unsplash.com/photo-1618554754947-e01d5ce3c549?q=80&w=720",
+        "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=720"
+      ],
+      summer: [
+        "https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?q=80&w=720",
+        "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=720"
+      ],
+      autumn: [
+        "https://images.unsplash.com/photo-1525450824786-227cbef70703?q=80&w=720",
+        "https://images.unsplash.com/photo-1513373319125-8da287b204a4?q=80&w=720"
+      ],
+      winter: [
+        "https://images.unsplash.com/photo-1580651315530-69c8e0026377?q=80&w=720",
+        "https://images.unsplash.com/photo-1610970881699-44a5587cabec?q=80&w=720"
+      ],
+      interview: [
+        "https://images.unsplash.com/photo-1603205319065-6ffcd6c454cc?q=80&w=720",
+        "https://images.unsplash.com/photo-1536766820879-059fec98ec0a?q=80&w=720"
+      ],
+      wedding: [
+        "https://images.unsplash.com/photo-1494578379344-d6c710782a3d?q=80&w=720",
+        "https://images.unsplash.com/photo-1579453437873-b765a26aba9a?q=80&w=720"
+      ]
+    };
+    
+    const defaultImages = [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=720",
+      "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?q=80&w=720"
+    ];
+    
+    const categoryImages = imageMap[category.toLowerCase()] || defaultImages;
+    return categoryImages[Math.floor(Math.random() * categoryImages.length)];
   };
 
   const handleViewGeneratedImage = (imageUrl: string) => {
@@ -508,7 +571,7 @@ const AIStylist = () => {
                   <img 
                     src={currentGeneratedImage} 
                     alt="Generated outfit suggestion" 
-                    className="rounded-lg max-h-80 object-contain"
+                    className="rounded-lg max-h-[60vh] w-auto object-contain"
                   />
                 </div>
               )}
