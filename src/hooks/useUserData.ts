@@ -29,37 +29,53 @@ export interface UserData {
 }
 
 export const useUserData = () => {
-  // Get onboarding data from localStorage
-  const onboardingDataString = localStorage.getItem('onboardingData') || '{}';
-  const parsedOnboardingData = JSON.parse(onboardingDataString);
+  // Load from localStorage on initial render
+  const loadUserData = (): UserData => {
+    // First check if there's already saved userData
+    const savedUserDataString = localStorage.getItem('userData');
+    
+    if (savedUserDataString) {
+      try {
+        return JSON.parse(savedUserDataString);
+      } catch (e) {
+        console.error('Error parsing saved user data:', e);
+        // If there's an error parsing, we'll fall back to the default + onboarding data
+      }
+    }
+    
+    // If no saved userData, use onboarding data + defaults
+    const onboardingDataString = localStorage.getItem('onboardingData') || '{}';
+    const parsedOnboardingData = JSON.parse(onboardingDataString);
+    
+    return {
+      name: localStorage.getItem('userName') || "Fashion Lover",
+      email: "user@example.com",
+      colorAnalysis: {
+        skinTone: "Medium",
+        undertone: "Warm",
+        season: "Autumn"
+      },
+      stylePreferences: {
+        favoriteColors: ["Blue", "Green", "Brown"],
+        preferredStyles: parsedOnboardingData.stylePreferences || [],
+        favoriteItems: ["Blazers", "Sneakers", "Jeans"]
+      },
+      notifications: {
+        appNotifications: true,
+        emailNotifications: false,
+        styleUpdates: true,
+        newFeatures: true
+      },
+      gender: parsedOnboardingData.gender || "",
+      age: parsedOnboardingData.age || "",
+      bodyShape: parsedOnboardingData.bodyShape || "",
+      height: parsedOnboardingData.height || "",
+      weight: parsedOnboardingData.weight || ""
+    };
+  };
   
-  // Initial user data
-  const [userData, setUserData] = useState<UserData>({
-    name: localStorage.getItem('userName') || "Fashion Lover",
-    email: "user@example.com",
-    colorAnalysis: {
-      skinTone: "Medium",
-      undertone: "Warm",
-      season: "Autumn"
-    },
-    stylePreferences: {
-      favoriteColors: ["Blue", "Green", "Brown"],
-      preferredStyles: parsedOnboardingData.stylePreferences || [],
-      favoriteItems: ["Blazers", "Sneakers", "Jeans"]
-    },
-    notifications: {
-      appNotifications: true,
-      emailNotifications: false,
-      styleUpdates: true,
-      newFeatures: true
-    },
-    // Add onboarding data
-    gender: parsedOnboardingData.gender || "",
-    age: parsedOnboardingData.age || "",
-    bodyShape: parsedOnboardingData.bodyShape || "",
-    height: parsedOnboardingData.height || "",
-    weight: parsedOnboardingData.weight || ""
-  });
+  // Initialize state
+  const [userData, setUserData] = useState<UserData>(loadUserData);
   
   // Effect to persist userData to localStorage when it changes
   useEffect(() => {
