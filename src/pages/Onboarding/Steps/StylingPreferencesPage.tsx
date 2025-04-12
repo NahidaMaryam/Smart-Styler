@@ -4,34 +4,41 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shirt, Briefcase, Sparkles, Minimize2, Palette } from 'lucide-react';
 
+type StylePreference = 
+  | "Casual Everyday Looks"
+  | "Formal & Professional Attire"
+  | "Trendy / Seasonal Outfits"
+  | "Minimalist Styling"
+  | "Ethnic / Traditional Wear";
+
 const styleOptions = [
   {
     id: "casual",
-    label: "Casual Everyday Looks",
+    label: "Casual Everyday Looks" as StylePreference,
     description: "Comfortable yet stylish outfits for daily wear",
     icon: <Shirt className="h-6 w-6" />
   },
   {
     id: "formal",
-    label: "Formal & Professional Attire",
+    label: "Formal & Professional Attire" as StylePreference,
     description: "Polished looks for the workplace and formal events",
     icon: <Briefcase className="h-6 w-6" />
   },
   {
     id: "trendy",
-    label: "Trendy / Seasonal Outfits",
+    label: "Trendy / Seasonal Outfits" as StylePreference,
     description: "The latest fashion trends for each season",
     icon: <Sparkles className="h-6 w-6" />
   },
   {
     id: "minimal",
-    label: "Minimalist Styling",
+    label: "Minimalist Styling" as StylePreference,
     description: "Clean, simple, and timeless outfits",
     icon: <Minimize2 className="h-6 w-6" />
   },
   {
     id: "ethnic",
-    label: "Ethnic / Traditional Wear",
+    label: "Ethnic / Traditional Wear" as StylePreference,
     description: "Cultural and traditional clothing options",
     icon: <Palette className="h-6 w-6" />
   }
@@ -40,7 +47,7 @@ const styleOptions = [
 const StylingPreferencesPage = () => {
   const { onboardingData, updateOnboardingData } = useOnboarding();
   
-  const toggleStylePreference = (preference: any) => {
+  const toggleStylePreference = (preference: { label: StylePreference }) => {
     const currentPreferences = [...onboardingData.stylePreferences];
     const index = currentPreferences.indexOf(preference.label);
     
