@@ -13,6 +13,7 @@ import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 import OnboardingContainer from "./pages/Onboarding/OnboardingContainer";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => {
             {/* Public routes */}
             <Route path="/login" element={isLoggedIn ? <Navigate to="/" /> : <Login />} />
             <Route path="/signup" element={isLoggedIn ? <Navigate to="/" /> : <Signup />} />
+            <Route path="/forgot-password" element={isLoggedIn ? <Navigate to="/" /> : <ForgotPassword />} />
             
             {/* Onboarding */}
             <Route 

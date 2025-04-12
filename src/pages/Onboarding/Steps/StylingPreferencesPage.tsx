@@ -47,14 +47,14 @@ const styleOptions = [
 const StylingPreferencesPage = () => {
   const { onboardingData, updateOnboardingData } = useOnboarding();
   
-  const toggleStylePreference = (preference: { label: StylePreference }) => {
+  const toggleStylePreference = (style: StylePreference) => {
     const currentPreferences = [...onboardingData.stylePreferences];
-    const index = currentPreferences.indexOf(preference.label);
+    const index = currentPreferences.indexOf(style);
     
     if (index > -1) {
       currentPreferences.splice(index, 1);
     } else {
-      currentPreferences.push(preference.label);
+      currentPreferences.push(style);
     }
     
     updateOnboardingData({ stylePreferences: currentPreferences });
@@ -75,7 +75,7 @@ const StylingPreferencesPage = () => {
             <Card 
               key={option.id} 
               className={`cursor-pointer hover:border-primary transition-colors ${isSelected ? 'border-2 border-primary bg-primary/5' : ''}`}
-              onClick={() => toggleStylePreference(option)}
+              onClick={() => toggleStylePreference(option.label)}
             >
               <CardContent className="flex items-center p-4">
                 <div className={`mr-4 p-2 rounded-full ${isSelected ? 'bg-primary/20' : 'bg-secondary'}`}>
