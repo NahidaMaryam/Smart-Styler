@@ -61,23 +61,36 @@ export const useUserData = () => {
     weight: parsedOnboardingData.weight || ""
   });
   
+  // Effect to persist userData to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('userData', JSON.stringify(userData));
+  }, [userData]);
+  
   // Update user data
   const updateUserData = (newData: Partial<UserData>) => {
-    setUserData(prevData => ({
-      ...prevData,
-      ...newData
-    }));
+    setUserData(prevData => {
+      const updatedData = {
+        ...prevData,
+        ...newData
+      };
+      
+      return updatedData;
+    });
   };
   
   // Toggle notification settings
   const toggleNotification = (key: keyof UserData['notifications']) => {
-    setUserData(prevData => ({
-      ...prevData,
-      notifications: {
-        ...prevData.notifications,
-        [key]: !prevData.notifications[key]
-      }
-    }));
+    setUserData(prevData => {
+      const updatedData = {
+        ...prevData,
+        notifications: {
+          ...prevData.notifications,
+          [key]: !prevData.notifications[key]
+        }
+      };
+      
+      return updatedData;
+    });
   };
   
   return { userData, updateUserData, toggleNotification };

@@ -40,7 +40,10 @@ const Profile = () => {
             
             {/* Style Preferences Tab */}
             <TabsContent value="preferences" className="animate-fade-in">
-              <StylePreferencesCard stylePreferences={userData.stylePreferences} />
+              <StylePreferencesCard 
+                stylePreferences={userData.stylePreferences} 
+                updateUserData={updateUserData}
+              />
             </TabsContent>
             
             {/* Notifications Tab */}
