@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar } from '@/components/ui/avatar';
-import { User, Edit2, Save } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Edit2, Save, CheckCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
@@ -30,13 +29,18 @@ interface UserData {
 interface PersonalInfoCardProps {
   userData: UserData;
   updateUserData: (data: Partial<UserData>) => void;
+  isNewUser?: boolean;
 }
 
-const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUserData }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUserData, isNewUser = false }) => {
+  const [isEditing, setIsEditing] = useState(isNewUser);
   const [name, setName] = useState(userData.name);
+  const [email, setEmail] = useState(userData.email);
+  const [gender, setGender] = useState(userData.gender);
+  const [age, setAge] = useState(userData.age);
   const [isBodyShapeDialogOpen, setIsBodyShapeDialogOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const bodyShapeForm = useForm({
     defaultValues: {
@@ -45,16 +49,29 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
   });
   
   const handleSaveProfile = () => {
-    updateUserData({ name });
+    const updatedData = {
+      name,
+      email,
+      gender,
+      age
+    };
+    
+    updateUserData(updatedData);
     setIsEditing(false);
     
     // Update localStorage
     localStorage.setItem('userName', name);
     
     toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved.",
+      title: isNewUser ? "Profile Created" : "Profile Updated",
+      description: isNewUser 
+        ? "Your profile has been created successfully!" 
+        : "Your profile information has been saved.",
     });
+    
+    if (isNewUser) {
+      navigate('/');
+    }
   };
   
   const handleBodyShapeSubmit = (data: { bodyShape: string }) => {
@@ -77,9 +94,11 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle>{isNewUser ? "Complete Your Profile" : "Personal Information"}</CardTitle>
           <CardDescription>
-            Update your account details and personal information.
+            {isNewUser 
+              ? "Please provide your personal details to enhance your styling experience." 
+              : "Update your account details and personal information."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -97,14 +116,29 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
               <div>
                 <label className="text-sm font-medium mb-1 block">Name</label>
                 {isEditing ? (
-                  <Input value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Enter your full name"
+                    required={isNewUser}
+                  />
                 ) : (
                   <div className="text-lg">{userData.name}</div>
                 )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Email</label>
-                <div className="text-lg">{userData.email}</div>
+                {isEditing ? (
+                  <Input 
+                    type="email"
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    required={isNewUser}
+                  />
+                ) : (
+                  <div className="text-lg">{userData.email}</div>
+                )}
               </div>
             </div>
           </div>
@@ -112,12 +146,38 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium mb-1 block">Gender</label>
-              <div className="text-lg">{userData.gender || "Not specified"}</div>
+              {isEditing ? (
+                <Select 
+                  value={gender} 
+                  onValueChange={setGender}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Non-binary">Non-binary</SelectItem>
+                    <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="text-lg">{userData.gender || "Not specified"}</div>
+              )}
             </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium mb-1 block">Age</label>
-              <div className="text-lg">{userData.age || "Not specified"}</div>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="Enter your age"
+                />
+              ) : (
+                <div className="text-lg">{userData.age || "Not specified"}</div>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -172,15 +232,29 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
           {isEditing ? (
             <div className="space-x-2">
               <Button onClick={handleSaveProfile}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
+                {isNewUser ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Complete Profile
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
-              <Button variant="ghost" onClick={() => {
-                setIsEditing(false);
-                setName(userData.name);
-              }}>
-                Cancel
-              </Button>
+              {!isNewUser && (
+                <Button variant="ghost" onClick={() => {
+                  setIsEditing(false);
+                  setName(userData.name);
+                  setEmail(userData.email);
+                  setGender(userData.gender);
+                  setAge(userData.age);
+                }}>
+                  Cancel
+                </Button>
+              )}
             </div>
           ) : (
             <Button onClick={() => setIsEditing(true)}>

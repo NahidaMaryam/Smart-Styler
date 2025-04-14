@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,10 +8,22 @@ import PersonalInfoCard from '@/components/profile/PersonalInfoCard';
 import StylePreferencesCard from '@/components/profile/StylePreferencesCard';
 import NotificationsCard from '@/components/profile/NotificationsCard';
 import PrivacyCard from '@/components/profile/PrivacyCard';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const { userData, updateUserData, toggleNotification } = useUserData();
+  const [isNewUser, setIsNewUser] = useState(false);
+  
+  // Check if this is a new user that needs to complete their profile
+  useEffect(() => {
+    const savedUserData = localStorage.getItem('userData');
+    if (!savedUserData || Object.keys(JSON.parse(savedUserData)).length === 0) {
+      setIsNewUser(true);
+      setActiveTab("profile"); // Force the profile tab for new users
+    }
+  }, []);
   
   return (
     <Layout>
@@ -21,6 +33,16 @@ const Profile = () => {
           <p className="text-muted-foreground mb-8">
             Manage your personal information and style preferences.
           </p>
+          
+          {isNewUser && (
+            <Alert variant="default" className="mb-6 border-primary">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Complete your profile</AlertTitle>
+              <AlertDescription>
+                Please complete your profile information to get personalized style recommendations.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList>
@@ -35,6 +57,7 @@ const Profile = () => {
               <PersonalInfoCard 
                 userData={userData} 
                 updateUserData={updateUserData} 
+                isNewUser={isNewUser}
               />
             </TabsContent>
             

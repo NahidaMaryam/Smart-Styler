@@ -33,7 +33,16 @@ const Login = () => {
         description: "Welcome back to Smart Styler!",
       });
       
-      navigate('/');
+      // Check if user has completed their profile
+      const userData = localStorage.getItem('userData');
+      const hasCompletedProfile = userData && Object.keys(JSON.parse(userData)).length > 0;
+      
+      // Redirect to profile page if profile is not completed
+      if (!hasCompletedProfile) {
+        navigate('/profile');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       toast({
         title: "Login failed",
