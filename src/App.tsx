@@ -26,13 +26,13 @@ const App = () => {
   const [onboardingCompleted, setOnboardingCompleted] = useState(localStorage.getItem('onboardingCompleted') === 'true');
   
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener for Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session) {
           localStorage.setItem('isLoggedIn', 'true');
           setIsLoggedIn(true);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           localStorage.removeItem('isLoggedIn');
           setIsLoggedIn(false);
         }
@@ -46,6 +46,22 @@ const App = () => {
         setIsLoggedIn(true);
       }
     });
+
+    // Also check localStorage for our demo mode
+    const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+    if (isLoggedInLocal) {
+      setIsLoggedIn(true);
+    }
+
+    const isSignedUpLocal = localStorage.getItem('isSignedUp') === 'true';
+    if (isSignedUpLocal) {
+      setIsSignedUp(true);
+    }
+
+    const onboardingCompletedLocal = localStorage.getItem('onboardingCompleted') === 'true';
+    if (onboardingCompletedLocal) {
+      setOnboardingCompleted(true);
+    }
 
     return () => subscription.unsubscribe();
   }, []);
