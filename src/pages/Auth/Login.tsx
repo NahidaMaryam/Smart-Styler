@@ -7,11 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Lock, Mail } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -19,13 +22,14 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // This is a placeholder for actual authentication
-    // In a real implementation, this would connect to Supabase or another auth provider
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
       
-      // Mock successful login
       localStorage.setItem('isLoggedIn', 'true');
       
       toast({
@@ -43,14 +47,41 @@ const Login = () => {
       } else {
         navigate('/');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Note: The actual redirect and session handling happens automatically
+      // when the user returns from Google OAuth flow
+      
+      localStorage.setItem('isLoggedIn', 'true');
+    } catch (error: any) {
+      toast({
+        title: "Google login failed",
+        description: error.message || "An error occurred during Google login.",
+        variant: "destructive",
+      });
+      setIsGoogleLoading(false);
     }
   };
   
@@ -102,11 +133,27 @@ const Login = () => {
                 />
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Log in"}
             </Button>
+
+            <div className="flex items-center gap-4 my-4">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+              className="w-full"
+            >
+              {isGoogleLoading ? "Connecting..." : "Sign in with Google"}
+            </Button>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm">
               Don't have an account?{" "}
               <Link to="/signup" className="text-primary hover:underline">

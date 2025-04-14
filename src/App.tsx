@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,14 +16,39 @@ import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import OnboardingContainer from "./pages/Onboarding/OnboardingContainer";
+import { supabase } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Basic auth check - in a real app, this would use Supabase auth
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-  const onboardingCompleted = localStorage.getItem('onboardingCompleted') === 'true';
-  const isSignedUp = localStorage.getItem('isSignedUp') === 'true';
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
+  const [isSignedUp, setIsSignedUp] = useState(localStorage.getItem('isSignedUp') === 'true');
+  const [onboardingCompleted, setOnboardingCompleted] = useState(localStorage.getItem('onboardingCompleted') === 'true');
+  
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session) {
+          localStorage.setItem('isLoggedIn', 'true');
+          setIsLoggedIn(true);
+        } else {
+          localStorage.removeItem('isLoggedIn');
+          setIsLoggedIn(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        localStorage.setItem('isLoggedIn', 'true');
+        setIsLoggedIn(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

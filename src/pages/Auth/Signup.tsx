@@ -7,12 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Lock, Mail, UserPlus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -20,11 +23,18 @@ const Signup = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // This is a placeholder for actual authentication
-    // In a real implementation, this would connect to Supabase or another auth provider
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          }
+        }
+      });
+      
+      if (error) throw error;
       
       // Mock successful signup
       localStorage.setItem('isSignedUp', 'true');
@@ -36,14 +46,41 @@ const Signup = () => {
       });
       
       navigate('/onboarding');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Signup failed",
-        description: "Please try again with different credentials.",
+        description: error.message || "Please try again with different credentials.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setIsGoogleLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/onboarding',
+        }
+      });
+      
+      if (error) throw error;
+      
+      // The actual redirect and session handling happens automatically
+      // when the user returns from Google OAuth flow
+      
+      localStorage.setItem('isSignedUp', 'true');
+    } catch (error: any) {
+      toast({
+        title: "Google signup failed",
+        description: error.message || "An error occurred during Google signup.",
+        variant: "destructive",
+      });
+      setIsGoogleLoading(false);
     }
   };
   
@@ -109,11 +146,27 @@ const Signup = () => {
                 Password must be at least 8 characters long
               </p>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Creating account..." : "Sign up"}
             </Button>
+
+            <div className="flex items-center gap-4 my-4">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={handleGoogleSignup}
+              disabled={isGoogleLoading}
+              className="w-full"
+            >
+              {isGoogleLoading ? "Connecting..." : "Sign up with Google"}
+            </Button>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm">
               Already have an account?{" "}
               <Link to="/login" className="text-primary hover:underline">
