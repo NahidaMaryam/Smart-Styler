@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
@@ -7,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { MessageCircle, Send, User, Upload, Image as ImageIcon } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Dialog, 
   DialogContent, 
@@ -16,6 +14,7 @@ import {
   DialogDescription 
 } from '@/components/ui/dialog';
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: number;
@@ -83,7 +82,7 @@ const AIStylist = () => {
         };
         
         setMessages([...messages, userMessage]);
-        simulateOutfitRating(imageDataUrl);
+        processImageWithGemini(imageDataUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -93,7 +92,7 @@ const AIStylist = () => {
     fileInputRef.current?.click();
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!input.trim()) return;
@@ -106,251 +105,132 @@ const AIStylist = () => {
       timestamp: new Date()
     };
     
-    setMessages([...messages, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setSelectedImage(null);
-    simulateResponse(input);
+    
+    await sendToGemini(input.trim(), updatedMessages);
   };
 
-  // Simulate AI rating for outfit image
-  const simulateOutfitRating = (imageUrl: string) => {
+  // Process image with Gemini
+  const processImageWithGemini = async (imageUrl: string) => {
     setIsTyping(true);
     
-    setTimeout(() => {
-      // Generate a mock outfit rating response with real image assets
-      const ratingResponses = [
+    try {
+      // Create a message specifically for image analysis
+      const imagePrompt = "Please analyze this outfit and provide feedback. Consider style, color coordination, fit, and occasion appropriateness. Also suggest how it could be improved or accessorized.";
+      
+      // Only send recent context to avoid token limits
+      const recentMessages = messages.slice(-5);
+      
+      const result = await sendToGemini(imagePrompt, [
+        ...recentMessages,
         {
-          text: "This outfit looks great! I love how you've paired these colors. The fit is excellent and the style suits you well. I'd rate it 9/10. Would you like to see a similar outfit recommendation?",
-          generatedImage: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=720"
-        },
-        {
-          text: "Nice outfit choice! The combination works well, though I might suggest adding an accessory to enhance it. Overall, it's a solid 7/10. Would you like to see a similar outfit with my suggested improvements?",
-          generatedImage: "https://images.unsplash.com/photo-1554412933-514a83d2f3c8?q=80&w=720"
-        },
-        {
-          text: "Interesting outfit! The color palette is cohesive, but the proportions could be improved. I'd rate it 6/10. I can suggest a similar style with better balance if you'd like?",
-          generatedImage: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=720"
-        },
-        {
-          text: "Excellent outfit composition! The textures and colors complement each other perfectly. This is definitely a 10/10. Would you like to see other outfit ideas in this style?",
-          generatedImage: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?q=80&w=720"
+          id: messages.length + 1,
+          content: `[Image uploaded] ${imagePrompt}`,
+          isUser: true,
+          timestamp: new Date()
         }
-      ];
+      ]);
       
-      const randomRating = ratingResponses[Math.floor(Math.random() * ratingResponses.length)];
+      // Find a suitable outfit image from our collection to recommend
+      if (result) {
+        const categories = ["party", "work", "casual", "date", "spring", "summer", "autumn", "winter"];
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        const generatedImage = getOutfitImageForCategory(randomCategory);
+        
+        // Update the AI response to include an image suggestion
+        const aiMessage = messages[messages.length - 1];
+        aiMessage.generatedImage = generatedImage;
+        setMessages([...messages]);
+      }
       
-      const aiMessage: Message = {
-        id: messages.length + 2,
-        content: randomRating.text,
+    } catch (error) {
+      console.error("Error processing image:", error);
+      const errorMessage: Message = {
+        id: messages.length + 1,
+        content: "Sorry, I had trouble analyzing that image. Could you try uploading it again or describe your outfit in text?",
         isUser: false,
-        timestamp: new Date(),
-        generatedImage: randomRating.generatedImage
+        timestamp: new Date()
       };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, Math.random() * 1000 + 2000);
+    }
   };
 
-  // Advanced response generation with more variety
-  const simulateResponse = (userInput: string) => {
+  // Send message to Gemini
+  const sendToGemini = async (userInput: string, messageHistory: Message[]) => {
     setIsTyping(true);
     
-    const normalizedInput = userInput.toLowerCase();
-    setTimeout(() => {
-      let response = '';
-      let generatedImage = null;
-      
-      // Create an object mapping keywords to arrays of possible responses
-      const responseOptions = {
-        party: [
-          {
-            text: "For a party, I'd recommend a statement piece that shows your personality! A deep burgundy dress or jumpsuit would look amazing, paired with minimal gold accessories to let your outfit shine.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Party outfits should be fun! Try an emerald green top with dark jeans and heels. Add some sparkle with metallic accessories, but remember - one statement piece is enough.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For your next party, consider a black midi dress with an interesting neckline or back detail. It's versatile enough to work with bold jewelry or a colorful clutch depending on the venue.",
-            image: "/placeholder.svg"
-          }
-        ],
-        work: [
-          {
-            text: "For professional settings, create a capsule wardrobe with navy, charcoal, and cream as your base. Add interest with texture and subtle patterns rather than bright colors.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Work outfits should balance comfort and style. Try tailored pants in a neutral tone with structured tops in your seasonal color palette. Navy, olive, or burgundy blazers are timeless investments.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For the office, consider high-quality basics that mix and match - like tailored trousers with silk blouses. Add personality with interesting but subtle accessories like a unique watch or elegant scarf.",
-            image: "/placeholder.svg"
-          }
-        ],
-        casual: [
-          {
-            text: "For casual weekends, elevated basics are key. Try straight-leg jeans with a well-fitted tee and an overshirt or cardigan. Finish with white sneakers or ankle boots depending on the season.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Casual doesn't mean sloppy! Try olive chinos with a heathered henley and a quality leather belt. The right fit transforms simple pieces into a put-together look.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For weekend outfits, consider layering different textures - like a soft cotton tee under a textured cardigan with well-fitted jeans. Thoughtful layers add interest to casual looks.",
-            image: "/placeholder.svg"
-          }
-        ],
-        date: [
-          {
-            text: "For date night, wear something that makes you feel confident! A well-fitted top in your most flattering color with your best jeans creates a timeless look. Add a special accessory that might become a conversation starter.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Date outfits should balance elegance and comfort. Consider dark jeans with a silky top and a structured jacket you can remove if the venue is warm. Comfortable but stylish shoes ensure you can focus on the conversation!",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For a romantic evening, try monochromatic dressing with different textures - like a cashmere sweater with wool trousers in similar tones. This creates a sophisticated look without seeming like you're trying too hard.",
-            image: "/placeholder.svg"
-          }
-        ],
-        spring: [
-          {
-            text: "For spring, incorporate lighter fabrics and colors like sage green, lavender, or butter yellow. Layer with lightweight cardigans or denim jackets for changing temperatures.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Spring is perfect for introducing florals and pastels. Try a floral blouse with neutral bottoms, or keep the outfit simple and add color with accessories.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For spring transitions, focus on adaptable layers - like a trench coat over a light sweater with straight-leg jeans. Ankle boots work until it's warm enough for loafers or sandals.",
-            image: "/placeholder.svg"
-          }
-        ],
-        summer: [
-          {
-            text: "Summer style should prioritize breathable fabrics like linen, cotton, and lightweight denim. Stick to a cohesive color palette so pieces mix easily for vacations.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For hot weather, loose-fitting linen pants or a midi skirt paired with a crisp cotton top creates an elegant silhouette while keeping you cool.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Summer outfits benefit from natural materials - try a linen shirt dress with leather sandals, or cotton shorts with a structured top to balance the casual bottom.",
-            image: "/placeholder.svg"
-          }
-        ],
-        autumn: [
-          {
-            text: "Autumn calls for rich, warm tones like rust, olive, and burgundy. Try combining different textures like a silk blouse under a chunky cardigan with corduroy pants.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Fall fashion thrives on layering - start with a fitted base layer, add a button-up or lightweight sweater, and top with a jacket or coat. This creates visual interest and practical warmth.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For autumn, incorporate earth tones with textured fabrics. A camel sweater with dark jeans and ankle boots creates a classic fall silhouette that never goes out of style.",
-            image: "/placeholder.svg"
-          }
-        ],
-        winter: [
-          {
-            text: "Winter style can still be interesting with thoughtful layering! Start with thermal basics, add sweaters and cardigans, then finish with a statement coat in a color that brightens gray days.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "In cold weather, invest in quality knitwear in your best colors. A collection of well-made sweaters can be paired with jeans or wool trousers for months of stylish outfits.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For winter, focus on interesting outerwear since that's what people see most. A colorful wool coat or a textured jacket can elevate simple outfits underneath.",
-            image: "/placeholder.svg"
-          }
-        ],
-        interview: [
-          {
-            text: "For interviews, it's best to appear polished but not distracting. A well-tailored blazer in navy or charcoal with matching trousers or a skirt projects competence and attention to detail.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Interview outfits should be slightly more formal than the company's everyday dress code. Research their culture, then elevate it a notch with quality fabrics and impeccable fit.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For professional interviews, stick to a limited color palette of navy, gray, white, and black with perhaps one accent color. This creates a cohesive look that keeps the focus on your qualifications.",
-            image: "/placeholder.svg"
-          }
-        ],
-        wedding: [
-          {
-            text: "For weddings, consider the venue and time of day. A garden afternoon wedding calls for lighter colors and fabrics, while evening formal events warrant darker tones and more structured garments.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "Wedding guest attire should be festive without upstaging the couple. A midi dress in a jewel tone or a well-tailored suit with an interesting tie or pocket square works for most ceremonies.",
-            image: "/placeholder.svg"
-          },
-          {
-            text: "For wedding celebrations, pay attention to the dress code. When in doubt, a knee-length dress in a non-white color or dark suit with appropriate accessories will work for most semi-formal occasions.",
-            image: "/placeholder.svg"
-          }
-        ]
-      };
-      
-      // Check for specific scenario keywords first
-      let foundKeyword = false;
-      for (const [keyword, responses] of Object.entries(responseOptions)) {
-        if (normalizedInput.includes(keyword)) {
-          // Pick a random response from the options
-          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-          response = randomResponse.text;
-          // Replace placeholder with actual images
-          generatedImage = getOutfitImageForCategory(keyword);
-          foundKeyword = true;
-          break;
+    try {
+      // Call our Supabase Edge Function that uses Gemini
+      const { data, error } = await supabase.functions.invoke('gemini-stylist', {
+        body: {
+          message: userInput,
+          messageHistory: messageHistory.slice(-10) // Limit context to avoid token limits
         }
+      });
+      
+      if (error) {
+        throw new Error(`Error calling Gemini: ${error.message}`);
       }
       
-      // If no keyword was matched, give a general response
-      if (!foundKeyword) {
-        const generalResponses = [
-          {
-            text: "Based on color analysis, I'd recommend focusing on warm earth tones like olive green, rust, and gold for your wardrobe. These complement most skin tones beautifully. Could you tell me about a specific occasion you're shopping for?",
-          },
-          {
-            text: "Your style profile suggests you prefer timeless pieces over trends. I'd recommend investing in quality basics in neutral colors, then adding personality with accessories. What type of outfit are you planning?",
-          },
-          {
-            text: "Looking at your preferences, I think you'd benefit from a capsule wardrobe approach - focusing on versatile pieces that mix and match easily. Would you like suggestions for specific items that would work well together?",
-          },
-          {
-            text: "I notice you haven't specified an occasion. For everyday style, I recommend the 'rule of three' - combining at least three pieces (like top, bottom, and layer or accessory) to create a complete look. What kind of outfits do you typically wear?",
-          }
-        ];
-        const randomResponse = generalResponses[Math.floor(Math.random() * generalResponses.length)];
-        response = randomResponse.text;
-        generatedImage = getOutfitImageForCategory('casual');
+      // Process the response
+      const aiResponse = data?.response || "I'm having trouble connecting right now. Please try again.";
+      
+      // Check if we should suggest an outfit image
+      const shouldSuggestOutfit = checkForOutfitSuggestion(userInput);
+      
+      // Determine if we should include a generated image
+      let generatedImage = null;
+      if (shouldSuggestOutfit) {
+        // Use keywords in the user's message to find a relevant outfit image
+        const outfitTypes = ["party", "work", "casual", "date", "spring", "summer", "autumn", "winter"];
+        const matchedType = outfitTypes.find(type => userInput.toLowerCase().includes(type));
+        generatedImage = getOutfitImageForCategory(matchedType || "casual");
       }
       
+      // Add AI message with response
       const aiMessage: Message = {
-        id: messages.length + 2,
-        content: response,
+        id: messageHistory.length + 1,
+        content: aiResponse,
         isUser: false,
         timestamp: new Date(),
         generatedImage: generatedImage
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      return true;
+      
+    } catch (error) {
+      console.error("Error with Gemini:", error);
+      const errorMessage: Message = {
+        id: messageHistory.length + 1,
+        content: "I'm having trouble connecting to my styling database right now. Please try again in a moment.",
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return false;
+      
+    } finally {
       setIsTyping(false);
-    }, Math.random() * 1000 + 1500);
+    }
+  };
+
+  // Check if we should suggest an outfit based on user message
+  const checkForOutfitSuggestion = (userInput: string) => {
+    const suggestionKeywords = [
+      "outfit", "wear", "dress", "clothes", "fashion", 
+      "party", "work", "date", "casual", "formal",
+      "recommend", "suggestion", "recommend", "advice"
+    ];
+    
+    return suggestionKeywords.some(keyword => 
+      userInput.toLowerCase().includes(keyword)
+    );
   };
 
   // Helper function to get real image URLs for outfit categories
@@ -419,7 +299,7 @@ const AIStylist = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-3 gradient-text">AI Stylist Assistant</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Get personalized outfit suggestions for any occasion, season, or style preference. Just ask or upload an image of your outfit!
+              Get personalized outfit suggestions for any occasion, season, or style preference with Gemini 2.0. Just ask or upload an image!
             </p>
           </div>
           

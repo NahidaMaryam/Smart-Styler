@@ -1,1 +1,5 @@
+
 project_id = "eglsybvrlegoqpvpqmda"
+
+[functions.gemini-stylist]
+verify_jwt = false
