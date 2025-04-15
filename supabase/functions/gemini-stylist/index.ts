@@ -15,6 +15,10 @@ serve(async (req) => {
   }
 
   try {
+    if (!geminiApiKey) {
+      throw new Error("GEMINI_API_KEY is not configured");
+    }
+
     const { message, messageHistory } = await req.json();
 
     // Format message history for Gemini API
@@ -44,49 +48,73 @@ serve(async (req) => {
       }
     ];
 
-    // Call Gemini API
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": geminiApiKey || "",
-      },
-      body: JSON.stringify({
-        contents: geminiMessages,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-      }),
-    });
-
-    const data = await response.json();
+    // Call Gemini API with a timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
     
-    // Extract the response text from Gemini
-    let responseText = "";
     try {
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        responseText = data.candidates[0].content.parts[0].text;
-      } else if (data.promptFeedback && data.promptFeedback.blockReason) {
-        responseText = `Sorry, I couldn't process that request: ${data.promptFeedback.blockReason}`;
-      } else {
-        console.log("Unexpected Gemini response structure:", JSON.stringify(data));
-        responseText = "Sorry, I encountered an issue processing your request.";
-      }
-    } catch (error) {
-      console.error("Error parsing Gemini response:", error);
-      responseText = "Sorry, I encountered an issue understanding the response.";
-    }
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": geminiApiKey,
+        },
+        body: JSON.stringify({
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+        }),
+        signal: controller.signal,
+      });
 
-    return new Response(JSON.stringify({ response: responseText }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Gemini API error:", errorData);
+        throw new Error(`Gemini API returned ${response.status}: ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract the response text from Gemini
+      let responseText = "";
+      try {
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+          responseText = data.candidates[0].content.parts[0].text;
+        } else if (data.promptFeedback && data.promptFeedback.blockReason) {
+          responseText = `Sorry, I couldn't process that request: ${data.promptFeedback.blockReason}`;
+        } else {
+          console.log("Unexpected Gemini response structure:", JSON.stringify(data));
+          responseText = "Sorry, I encountered an issue processing your request.";
+        }
+      } catch (error) {
+        console.error("Error parsing Gemini response:", error);
+        responseText = "Sorry, I encountered an issue understanding the response.";
+      }
+
+      return new Response(JSON.stringify({ response: responseText }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        throw new Error("Request to Gemini API timed out after 15 seconds");
+      }
+      throw fetchError;
+    }
   } catch (error) {
     console.error('Error in gemini-stylist function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    return new Response(JSON.stringify({ 
+      error: error.message || "An unexpected error occurred",
+      errorType: error.name,
+      errorDetails: error.stack
+    }), {
+      status: error.name === 'AbortError' ? 504 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from 'lucide-react';
 import { useAIStylistChat } from '@/hooks/useAIStylistChat';
 import ChatContainer from '@/components/ai-stylist/ChatContainer';
 import ChatInput from '@/components/ai-stylist/ChatInput';
@@ -11,21 +13,35 @@ import ImagePreviewDialog from '@/components/ai-stylist/ImagePreviewDialog';
 const AIStylist = () => {
   const [showGeneratedImage, setShowGeneratedImage] = useState(false);
   const [currentGeneratedImage, setCurrentGeneratedImage] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   
   const { 
     messages, 
     input, 
     isTyping, 
+    apiError,
     fileInputRef,
     handleInputChange, 
     handleImageUpload, 
     handleUploadClick, 
-    handleSubmit 
+    handleSubmit,
+    handleRetry
   } = useAIStylistChat();
 
   const handleViewGeneratedImage = (imageUrl: string) => {
+    setIsImageLoading(true);
     setCurrentGeneratedImage(imageUrl);
     setShowGeneratedImage(true);
+    
+    // Simulate image loading
+    const img = new Image();
+    img.onload = () => {
+      setIsImageLoading(false);
+    };
+    img.onerror = () => {
+      setIsImageLoading(false);
+    };
+    img.src = imageUrl;
   };
   
   return (
@@ -44,7 +60,9 @@ const AIStylist = () => {
               <ChatContainer 
                 messages={messages}
                 isTyping={isTyping}
+                apiError={apiError}
                 onViewGeneratedImage={handleViewGeneratedImage}
+                onRetry={handleRetry}
               />
               <ChatInput 
                 input={input}
@@ -53,6 +71,7 @@ const AIStylist = () => {
                 onUploadClick={handleUploadClick}
                 fileInputRef={fileInputRef}
                 onImageUpload={handleImageUpload}
+                disabled={isTyping}
               />
             </CardContent>
           </Card>
@@ -61,6 +80,7 @@ const AIStylist = () => {
             open={showGeneratedImage}
             onOpenChange={setShowGeneratedImage}
             imageUrl={currentGeneratedImage}
+            isLoading={isImageLoading}
           />
         </div>
       </PageContainer>

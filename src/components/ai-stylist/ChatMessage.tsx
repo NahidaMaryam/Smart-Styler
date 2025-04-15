@@ -2,15 +2,16 @@
 import React from 'react';
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, User, Image as ImageIcon } from 'lucide-react';
+import { MessageCircle, User, Image as ImageIcon, AlertTriangle, RefreshCw } from 'lucide-react';
 import { type Message } from '@/hooks/useAIStylistChat';
 
 interface ChatMessageProps {
   message: Message;
   onViewGeneratedImage: (imageUrl: string) => void;
+  onRetry?: (content: string) => void;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, onViewGeneratedImage }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, onViewGeneratedImage, onRetry }) => {
   return (
     <div
       className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}
@@ -27,8 +28,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onViewGeneratedImage
               <User className="h-5 w-5" />
             </Avatar>
           ) : (
-            <Avatar className="bg-accent text-white border-2 border-accent/20">
-              <MessageCircle className="h-5 w-5" />
+            <Avatar className={`${message.error ? 'bg-destructive' : 'bg-accent'} text-white border-2 ${message.error ? 'border-destructive/20' : 'border-accent/20'}`}>
+              {message.error ? <AlertTriangle className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
             </Avatar>
           )}
         </div>
@@ -36,7 +37,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onViewGeneratedImage
           className={`rounded-xl px-4 py-3 text-sm ${
             message.isUser
               ? 'bg-primary text-primary-foreground'
-              : 'bg-muted'
+              : message.error
+                ? 'bg-destructive/10 border border-destructive/30'
+                : 'bg-muted'
           } shadow-sm`}
         >
           {message.content}
@@ -61,6 +64,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onViewGeneratedImage
               >
                 <ImageIcon className="h-4 w-4" />
                 View suggested outfit
+              </Button>
+            </div>
+          )}
+          
+          {message.error && onRetry && (
+            <div className="mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 mt-2 text-xs"
+                onClick={() => onRetry(message.content)}
+              >
+                <RefreshCw className="h-3 w-3" />
+                Try again
               </Button>
             </div>
           )}

@@ -10,6 +10,7 @@ export interface Message {
   timestamp: Date;
   image?: string;
   generatedImage?: string;
+  error?: boolean;
 }
 
 interface UseAIStylistChatProps {
@@ -30,6 +31,7 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,9 +97,30 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
     await sendToGemini(input.trim(), updatedMessages);
   };
 
+  const handleRetry = async (failedPrompt: string) => {
+    setIsTyping(true);
+    setApiError(null);
+    
+    try {
+      // Use recent context for the retry
+      const recentMessages = messages.slice(-5).filter(msg => !msg.error);
+      await sendToGemini(failedPrompt, recentMessages);
+    } catch (error) {
+      console.error("Error retrying:", error);
+      toast({
+        title: "Retry failed",
+        description: "Still having trouble connecting to the styling service. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   // Process image with Gemini
   const processImageWithGemini = async (imageUrl: string) => {
     setIsTyping(true);
+    setApiError(null);
     
     try {
       // Create a message specifically for image analysis
@@ -130,21 +153,38 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
       
     } catch (error) {
       console.error("Error processing image:", error);
-      const errorMessage: Message = {
-        id: messages.length + 1,
-        content: "Sorry, I had trouble analyzing that image. Could you try uploading it again or describe your outfit in text?",
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      handleApiError("image analysis");
     } finally {
       setIsTyping(false);
     }
   };
 
+  // Handle API errors
+  const handleApiError = (context: string) => {
+    const errorMessage = `Sorry, I'm having trouble connecting to the styling service for ${context}. This could be due to high demand or a temporary issue.`;
+    setApiError(errorMessage);
+    
+    const aiErrorMessage: Message = {
+      id: messages.length + 1,
+      content: errorMessage,
+      isUser: false,
+      timestamp: new Date(),
+      error: true
+    };
+    
+    setMessages(prev => [...prev, aiErrorMessage]);
+    
+    toast({
+      title: "Connection issue",
+      description: "Having trouble connecting to Gemini. Please try again later.",
+      variant: "destructive"
+    });
+  };
+
   // Send message to Gemini
   const sendToGemini = async (userInput: string, messageHistory: Message[]) => {
     setIsTyping(true);
+    setApiError(null);
     
     try {
       // Call our Supabase Edge Function that uses Gemini
@@ -188,13 +228,7 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
       
     } catch (error) {
       console.error("Error with Gemini:", error);
-      const errorMessage: Message = {
-        id: messageHistory.length + 1,
-        content: "I'm having trouble connecting to my styling database right now. Please try again in a moment.",
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      handleApiError("generating a response");
       return false;
       
     } finally {
@@ -273,12 +307,14 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
     messages,
     input,
     isTyping,
+    apiError,
     fileInputRef,
     selectedImage,
     handleInputChange,
     handleImageUpload,
     handleUploadClick,
     handleSubmit,
+    handleRetry,
     getOutfitImageForCategory
   };
 };

@@ -1,20 +1,25 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Avatar } from "@/components/ui/avatar";
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import ChatMessage from './ChatMessage';
 import { type Message } from '@/hooks/useAIStylistChat';
 
 interface ChatContainerProps {
   messages: Message[];
   isTyping: boolean;
+  apiError?: string | null;
   onViewGeneratedImage: (imageUrl: string) => void;
+  onRetry?: (content: string) => void;
 }
 
 const ChatContainer: React.FC<ChatContainerProps> = ({ 
   messages, 
   isTyping, 
-  onViewGeneratedImage 
+  apiError,
+  onViewGeneratedImage,
+  onRetry
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,11 +34,22 @@ const ChatContainer: React.FC<ChatContainerProps> = ({
   return (
     <div className="flex-grow overflow-y-auto p-4 pt-6">
       <div className="space-y-4">
+        {apiError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Connection Issue</AlertTitle>
+            <AlertDescription>
+              The AI Stylist service is currently unavailable. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {messages.map((message) => (
           <ChatMessage 
             key={message.id} 
             message={message} 
-            onViewGeneratedImage={onViewGeneratedImage} 
+            onViewGeneratedImage={onViewGeneratedImage}
+            onRetry={onRetry}
           />
         ))}
         
