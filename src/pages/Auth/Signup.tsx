@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,29 @@ const Signup = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Check for returning OAuth users
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        localStorage.setItem('isSignedUp', 'true');
+        localStorage.setItem('isLoggedIn', 'true');
+        if (session.user?.email) {
+          localStorage.setItem('userEmail', session.user.email);
+        }
+        // For Google signup, set a default name if not available
+        const userName = session.user?.user_metadata?.full_name || 
+                         session.user?.user_metadata?.name || 
+                         "User";
+        localStorage.setItem('userName', userName);
+        navigate('/onboarding');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+  
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -36,6 +59,11 @@ const Signup = () => {
       
       if (error) {
         console.error("Signup error:", error);
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive",
+        });
         
         // For demo purposes, allow signup anyway
         localStorage.setItem('isSignedUp', 'true');
@@ -94,38 +122,22 @@ const Signup = () => {
       
       if (error) {
         console.error("Google signup error:", error);
-        
-        // For demo purposes, proceed anyway
-        localStorage.setItem('isSignedUp', 'true');
-        localStorage.setItem('userName', 'Google User');
-        localStorage.setItem('userEmail', 'google-user@example.com');
-        
         toast({
-          title: "Account created with Google (Demo)",
-          description: "Let's set up your styling preferences!",
+          title: "Google signup failed",
+          description: error.message,
+          variant: "destructive",
         });
-        
-        navigate('/onboarding');
-        return;
       }
       
       // The actual redirect and session handling happens automatically
-      // when the user returns from Google OAuth flow
-      localStorage.setItem('isSignedUp', 'true');
+      // when the user returns from Google OAuth flow via onAuthStateChange
     } catch (error: any) {
       console.error("Google signup error caught:", error);
-      
-      // For demo purposes, proceed anyway
-      localStorage.setItem('isSignedUp', 'true');
-      localStorage.setItem('userName', 'Google User');
-      localStorage.setItem('userEmail', 'google-user@example.com');
-      
       toast({
-        title: "Account created with Google (Demo)",
-        description: "Let's set up your styling preferences!",
+        title: "Google signup failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
-      
-      navigate('/onboarding');
     } finally {
       setIsGoogleLoading(false);
     }

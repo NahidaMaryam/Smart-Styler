@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Lock, Mail } from 'lucide-react';
+import { User, Lock, Mail, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +17,35 @@ const Login = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Check for returning OAuth users
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // User is already logged in
+        localStorage.setItem('isLoggedIn', 'true');
+        navigate('/');
+      }
+    };
+    
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        localStorage.setItem('isLoggedIn', 'true');
+        if (session.user?.email) {
+          localStorage.setItem('userEmail', session.user.email);
+        }
+        navigate('/');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,41 +118,28 @@ const Login = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: window.location.origin + '/profile',
         }
       });
       
       if (error) {
         console.error("Google login error:", error);
-        
-        // For demo purposes
         toast({
-          title: "Google login successful (Demo)",
-          description: "Welcome to Smart Styler with Google! (Demo Mode)",
+          title: "Google login failed",
+          description: error.message,
+          variant: "destructive",
         });
-        
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userEmail', 'google-user@example.com');
-        
-        navigate('/');
-        return;
       }
       
-      // If no error, the redirect will happen automatically
-      localStorage.setItem('isLoggedIn', 'true');
+      // The redirect and session handling happens automatically 
+      // No need to set anything here, onAuthStateChange will handle it
     } catch (error: any) {
       console.error("Google login error caught:", error);
-      
-      // For demo purposes
       toast({
-        title: "Google login successful (Demo)",
-        description: "Welcome to Smart Styler with Google! (Demo Mode)",
+        title: "Google login failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
-      
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', 'google-user@example.com');
-      
-      navigate('/');
     } finally {
       setIsGoogleLoading(false);
     }
@@ -134,7 +150,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <User className="h-16 w-16 rounded-full bg-primary/10 p-3 text-primary" />
+            <LogIn className="h-16 w-16 rounded-full bg-primary/10 p-3 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold">Welcome to Smart Styler</CardTitle>
           <CardDescription>
