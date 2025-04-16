@@ -9,12 +9,14 @@ import { User, Lock, Mail, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -50,6 +52,7 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setAuthError(null);
     
     try {
       // Try to authenticate with Supabase
@@ -113,17 +116,19 @@ const Login = () => {
   
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
+    setAuthError(null);
     
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/profile',
+          redirectTo: window.location.origin,
         }
       });
       
       if (error) {
         console.error("Google login error:", error);
+        setAuthError(`Google login failed: ${error.message}`);
         toast({
           title: "Google login failed",
           description: error.message,
@@ -135,6 +140,7 @@ const Login = () => {
       // No need to set anything here, onAuthStateChange will handle it
     } catch (error: any) {
       console.error("Google login error caught:", error);
+      setAuthError(`Authentication error: ${error.message || 'Unknown error'}`);
       toast({
         title: "Google login failed",
         description: "An unexpected error occurred. Please try again.",
@@ -159,6 +165,11 @@ const Login = () => {
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
+            {authError && (
+              <Alert variant="destructive" className="text-sm">
+                <AlertDescription>{authError}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
