@@ -6,6 +6,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, MessageSquare, Shirt, Palette } from 'lucide-react';
+import WeatherStyleTips from '@/components/home/WeatherStyleTips';
 
 const HomePage = () => {
   const username = "Fashion Lover"; // This would come from user authentication
@@ -66,6 +67,9 @@ const HomePage = () => {
               </Button>
             </div>
           </section>
+
+          {/* Weather-based styling tips */}
+          <WeatherStyleTips />
 
           {/* Features Grid */}
           <section className="py-10">
