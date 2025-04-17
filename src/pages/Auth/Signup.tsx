@@ -79,7 +79,7 @@ const Signup = () => {
         return;
       }
       
-      // Mock successful signup
+      // Successful signup
       localStorage.setItem('isSignedUp', 'true');
       localStorage.setItem('userName', name);
       localStorage.setItem('userEmail', email);

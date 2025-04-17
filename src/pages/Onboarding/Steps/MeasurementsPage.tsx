@@ -5,9 +5,37 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Ruler } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MeasurementsPage = () => {
   const { onboardingData, updateOnboardingData } = useOnboarding();
+  
+  // Update both onboarding context and Supabase profile
+  const handleUpdateData = async (data: any) => {
+    // Update onboarding context
+    updateOnboardingData(data);
+    
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session && !data.skipMeasurements) {
+        // Map our data to profiles table structure
+        const profileUpdateData: any = {};
+        
+        if (data.height) profileUpdateData.height = data.height;
+        if (data.weight) profileUpdateData.weight = data.weight;
+        
+        // Update the profile in Supabase
+        await supabase
+          .from('profiles')
+          .update(profileUpdateData)
+          .eq('id', session.user.id);
+      }
+    } catch (error) {
+      console.error('Error updating profile during onboarding:', error);
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -28,7 +56,7 @@ const MeasurementsPage = () => {
         <Switch 
           id="skip-measurements" 
           checked={onboardingData.skipMeasurements} 
-          onCheckedChange={(checked) => updateOnboardingData({ skipMeasurements: checked })}
+          onCheckedChange={(checked) => handleUpdateData({ skipMeasurements: checked })}
         />
       </div>
       
@@ -41,7 +69,7 @@ const MeasurementsPage = () => {
               type="number" 
               placeholder="e.g., 170" 
               value={onboardingData.height}
-              onChange={(e) => updateOnboardingData({ height: e.target.value })}
+              onChange={(e) => handleUpdateData({ height: e.target.value })}
             />
           </div>
           
@@ -52,7 +80,7 @@ const MeasurementsPage = () => {
               type="number" 
               placeholder="e.g., 65" 
               value={onboardingData.weight}
-              onChange={(e) => updateOnboardingData({ weight: e.target.value })}
+              onChange={(e) => handleUpdateData({ weight: e.target.value })}
             />
           </div>
           

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 const genderOptions = [
   { value: "Male", label: "Male" },
@@ -26,6 +27,34 @@ const bodyShapeOptions = [
 const PersonalInfoPage = () => {
   const { onboardingData, updateOnboardingData } = useOnboarding();
   
+  // Update both onboarding context and Supabase profile
+  const handleUpdateData = async (data: any) => {
+    // Update onboarding context
+    updateOnboardingData(data);
+    
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Map our data to profiles table structure
+        const profileUpdateData: any = {};
+        
+        if (data.gender) profileUpdateData.gender = data.gender;
+        if (data.age) profileUpdateData.age = data.age;
+        if (data.bodyShape) profileUpdateData.body_shape = data.bodyShape;
+        
+        // Update the profile in Supabase
+        await supabase
+          .from('profiles')
+          .update(profileUpdateData)
+          .eq('id', session.user.id);
+      }
+    } catch (error) {
+      console.error('Error updating profile during onboarding:', error);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -38,7 +67,7 @@ const PersonalInfoPage = () => {
           <Label>What's your gender?</Label>
           <RadioGroup 
             value={onboardingData.gender || ""}
-            onValueChange={(value) => updateOnboardingData({ gender: value as any })}
+            onValueChange={(value) => handleUpdateData({ gender: value as any })}
             className="grid grid-cols-2 gap-2"
           >
             {genderOptions.map((option) => (
@@ -59,7 +88,7 @@ const PersonalInfoPage = () => {
             type="number" 
             placeholder="Enter your age" 
             value={onboardingData.age}
-            onChange={(e) => updateOnboardingData({ age: e.target.value })}
+            onChange={(e) => handleUpdateData({ age: e.target.value })}
           />
         </div>
         
@@ -67,7 +96,7 @@ const PersonalInfoPage = () => {
           <Label htmlFor="body-shape">Body Shape</Label>
           <Select 
             value={onboardingData.bodyShape || ""} 
-            onValueChange={(value) => updateOnboardingData({ bodyShape: value as any })}
+            onValueChange={(value) => handleUpdateData({ bodyShape: value as any })}
           >
             <SelectTrigger id="body-shape">
               <SelectValue placeholder="Select your body shape" />

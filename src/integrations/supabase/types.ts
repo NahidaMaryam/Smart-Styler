@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          age: string | null
+          body_shape: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          gender: string | null
+          height: string | null
+          id: string
+          season: string | null
+          skin_tone: string | null
+          undertone: string | null
+          updated_at: string | null
+          weight: string | null
+        }
+        Insert: {
+          age?: string | null
+          body_shape?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          height?: string | null
+          id: string
+          season?: string | null
+          skin_tone?: string | null
+          undertone?: string | null
+          updated_at?: string | null
+          weight?: string | null
+        }
+        Update: {
+          age?: string | null
+          body_shape?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          height?: string | null
+          id?: string
+          season?: string | null
+          skin_tone?: string | null
+          undertone?: string | null
+          updated_at?: string | null
+          weight?: string | null
+        }
+        Relationships: []
+      }
       styler1: {
         Row: {
           created_at: string
