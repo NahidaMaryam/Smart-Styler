@@ -63,19 +63,13 @@ const Login = () => {
 
       if (error) {
         console.error("Supabase auth error:", error);
-        
-        // For demo purposes, allow login with any credentials
-        // This is just for development - remove in production
+        setAuthError(`Login failed: ${error.message}`);
         toast({
-          title: "Login successful (Demo Mode)",
-          description: "Welcome to Smart Styler! (Using demo credentials)",
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
         });
-        
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userEmail', email);
-        
-        // Redirect to profile or home
-        navigate('/');
+        setIsLoading(false);
         return;
       }
       
@@ -98,17 +92,12 @@ const Login = () => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      
-      // For demo purposes, allow login anyway
+      setAuthError(`Authentication error: ${error.message || 'Unknown error'}`);
       toast({
-        title: "Login successful (Demo Mode)",
-        description: "Welcome to Smart Styler! (Using demo credentials)",
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
       });
-      
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', email);
-      
-      navigate('/');
     } finally {
       setIsLoading(false);
     }
