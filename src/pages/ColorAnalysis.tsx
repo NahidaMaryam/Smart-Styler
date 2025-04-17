@@ -1,11 +1,10 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Upload, Save } from 'lucide-react';
+import { Camera, Upload, Save, X } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 const ColorAnalysis = () => {
@@ -18,8 +17,20 @@ const ColorAnalysis = () => {
     colorsToWear: string[];
     colorsToAvoid: string[];
   }>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -33,22 +44,71 @@ const ColorAnalysis = () => {
     }
   };
 
-  const handleCameraCapture = () => {
-    // In a real implementation, this would trigger the device camera
-    // For now, we'll just show a message that it's not implemented
-    toast({
-      title: "Camera Feature",
-      description: "The camera feature would be implemented with device camera access",
-    });
+  const handleCameraCapture = async () => {
+    try {
+      if (cameraActive && videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+        
+        const imageDataUrl = canvas.toDataURL('image/jpeg');
+        setImage(imageDataUrl);
+        
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+          setCameraStream(null);
+        }
+        setCameraActive(false);
+        
+        simulateAnalysis();
+      } else {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" },
+          audio: false 
+        });
+        
+        setCameraStream(stream);
+        setCameraActive(true);
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        
+        toast({
+          title: "Camera Access Granted",
+          description: "Your camera is now active. Center your face and click 'Take Photo'.",
+        });
+      }
+    } catch (error) {
+      console.error("Camera access error:", error);
+      toast({
+        title: "Camera Access Denied",
+        description: "Please allow camera access in your browser settings to use this feature.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCameraCancel = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraActive(false);
   };
 
   const simulateAnalysis = () => {
     setAnalyzing(true);
-    // Simulate analysis delay (in a real app, this would be an actual ML process)
     setTimeout(() => {
       setAnalyzing(false);
       
-      // Mock results - in a real app, these would come from ML model
       setResults({
         skinTone: "Medium",
         undertone: "Warm",
@@ -67,7 +127,6 @@ const ColorAnalysis = () => {
   };
 
   const renderColorBox = (color: string) => {
-    // Map color names to actual color values
     const colorMap: Record<string, string> = {
       "Olive Green": "#556B2F",
       "Terracotta": "#E2725B",
@@ -160,17 +219,61 @@ const ColorAnalysis = () => {
               <CardHeader>
                 <CardTitle>Take a Photo</CardTitle>
                 <CardDescription>
-                  Use your device's camera to take a well-lit photo.
+                  Use your device's camera to take a well-lit photo. You'll need to grant camera permission.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center">
-                <Button onClick={handleCameraCapture} className="gap-2 mb-4">
-                  <Camera className="w-4 h-4" />
-                  Open Camera
-                </Button>
-                <div className="w-full max-w-sm h-[200px] bg-muted rounded-md flex items-center justify-center">
-                  <Camera className="w-10 h-10 text-muted-foreground opacity-50" />
-                </div>
+                {!cameraActive && !image && (
+                  <Button onClick={handleCameraCapture} className="gap-2 mb-4">
+                    <Camera className="w-4 h-4" />
+                    {cameraStream ? "Take Photo" : "Access Camera"}
+                  </Button>
+                )}
+                
+                {cameraActive && (
+                  <div className="relative w-full max-w-sm">
+                    <div className="bg-black rounded-md overflow-hidden">
+                      <video 
+                        ref={videoRef}
+                        autoPlay 
+                        playsInline 
+                        className="w-full h-auto rounded-md"
+                      />
+                    </div>
+                    <canvas ref={canvasRef} className="hidden" />
+                    
+                    <div className="flex gap-2 mt-4 justify-center">
+                      <Button onClick={handleCameraCapture} className="gap-2">
+                        <Camera className="w-4 h-4" />
+                        Take Photo
+                      </Button>
+                      <Button variant="outline" onClick={handleCameraCancel} className="gap-2">
+                        <X className="w-4 h-4" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {!cameraActive && image && (
+                  <div className="relative max-w-sm">
+                    <img 
+                      src={image} 
+                      alt="Camera capture" 
+                      className="rounded-md max-h-[300px] object-contain mx-auto" 
+                    />
+                    <Button 
+                      variant="secondary" 
+                      className="mt-4"
+                      onClick={() => {
+                        setImage(null);
+                        setResults(null);
+                      }}
+                    >
+                      Retake Photo
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
