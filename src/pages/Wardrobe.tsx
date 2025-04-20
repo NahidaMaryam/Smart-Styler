@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import Layout from '@/components/layout/Layout';
@@ -8,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shirt, Footprints, Tag, Upload, Plus, RefreshCw } from 'lucide-react';
+import OutfitSuggestions from '@/components/wardrobe/OutfitSuggestions';
 
 interface ClothingItem {
   id: string;
@@ -92,6 +94,10 @@ const Wardrobe = () => {
         <p className="text-muted-foreground mb-8">
           Upload and manage your clothing items for personalized style recommendations.
         </p>
+        
+        {items.length > 0 && (
+          <OutfitSuggestions items={items} />
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">

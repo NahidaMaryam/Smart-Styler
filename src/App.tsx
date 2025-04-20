@@ -1,126 +1,41 @@
 
-import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "./pages/Index";
-import ColorAnalysis from "./pages/ColorAnalysis";
-import AIStylist from "./pages/AIStylist";
-import Wardrobe from "./pages/Wardrobe";
-import Profile from "./pages/Profile";
-import History from "./pages/History";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup";
-import ForgotPassword from "./pages/Auth/ForgotPassword";
-import OnboardingContainer from "./pages/Onboarding/OnboardingContainer";
-import { supabase } from "./integrations/supabase/client";
 
-const queryClient = new QueryClient();
+// Pages
+import HomePage from './pages/Index';
+import ColorAnalysis from './pages/ColorAnalysis';
+import Wardrobe from './pages/Wardrobe';
+import AIStylist from './pages/AIStylist';
+import Profile from './pages/Profile';
+import History from './pages/History';
+import NotFound from './pages/NotFound';
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
+import ForgotPassword from './pages/Auth/ForgotPassword';
+import OnboardingContainer from './pages/Onboarding/OnboardingContainer';
+import Subscription from './pages/Subscription';
 
-const App = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem('isLoggedIn') === 'true');
-  const [isSignedUp, setIsSignedUp] = useState(localStorage.getItem('isSignedUp') === 'true');
-  const [onboardingCompleted, setOnboardingCompleted] = useState(localStorage.getItem('onboardingCompleted') === 'true');
-  
-  useEffect(() => {
-    // Set up auth state listener for Supabase
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          localStorage.setItem('isLoggedIn', 'true');
-          setIsLoggedIn(true);
-        } else if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('isLoggedIn');
-          setIsLoggedIn(false);
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        localStorage.setItem('isLoggedIn', 'true');
-        setIsLoggedIn(true);
-      }
-    });
-
-    // Also check localStorage for our demo mode
-    const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
-    if (isLoggedInLocal) {
-      setIsLoggedIn(true);
-    }
-
-    const isSignedUpLocal = localStorage.getItem('isSignedUp') === 'true';
-    if (isSignedUpLocal) {
-      setIsSignedUp(true);
-    }
-
-    const onboardingCompletedLocal = localStorage.getItem('onboardingCompleted') === 'true';
-    if (onboardingCompletedLocal) {
-      setOnboardingCompleted(true);
-    }
-
-    return () => subscription.unsubscribe();
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={isLoggedIn ? <Navigate to="/" /> : <Login />} />
-            <Route path="/signup" element={isLoggedIn ? <Navigate to="/" /> : <Signup />} />
-            <Route path="/forgot-password" element={isLoggedIn ? <Navigate to="/" /> : <ForgotPassword />} />
-            
-            {/* Onboarding */}
-            <Route 
-              path="/onboarding" 
-              element={
-                isSignedUp && !onboardingCompleted ? 
-                <OnboardingContainer /> : 
-                (isLoggedIn ? <Navigate to="/" /> : <Navigate to="/login" />)
-              } 
-            />
-            
-            {/* Protected routes */}
-            <Route 
-              path="/" 
-              element={isLoggedIn ? <HomePage /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/color-analysis" 
-              element={isLoggedIn ? <ColorAnalysis /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/ai-stylist" 
-              element={isLoggedIn ? <AIStylist /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/wardrobe" 
-              element={isLoggedIn ? <Wardrobe /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/profile" 
-              element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/history" 
-              element={isLoggedIn ? <History /> : <Navigate to="/login" />} 
-            />
-            
-            {/* 404 route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/color-analysis" element={<ColorAnalysis />} />
+        <Route path="/wardrobe" element={<Wardrobe />} />
+        <Route path="/ai-stylist" element={<AIStylist />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/onboarding" element={<OnboardingContainer />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </Router>
   );
-};
+}
 
 export default App;
