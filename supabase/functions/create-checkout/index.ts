@@ -96,7 +96,8 @@ serve(async (req) => {
       order_id: orderData.id,
       amount: amount,
       currency: currency,
-      email: user.email
+      email: user.email,
+      key_id: Deno.env.get("RAZORPAY_KEY_ID")  // Send the key ID to the frontend
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

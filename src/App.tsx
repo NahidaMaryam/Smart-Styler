@@ -1,7 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Pages
 import HomePage from './pages/Index';
@@ -16,23 +16,40 @@ import Signup from './pages/Auth/Signup';
 import ForgotPassword from './pages/Auth/ForgotPassword';
 import OnboardingContainer from './pages/Onboarding/OnboardingContainer';
 import Subscription from './pages/Subscription';
+import { useToast } from './components/ui/use-toast';
 
 // RazorPay script component
 const RazorPayScript = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   
   useEffect(() => {
-    // Only load RazorPay if on subscription or checkout pages
-    if (location.pathname.includes('subscription') || location.pathname.includes('checkout')) {
-      if (!document.getElementById('razorpay-script')) {
+    // Check if we need to load the script on this page
+    const needsRazorPay = location.pathname.includes('subscription') || 
+                          location.pathname.includes('checkout') ||
+                          new URLSearchParams(location.search).has('payment');
+    
+    if (needsRazorPay) {
+      if (!document.getElementById('razorpay-script') && !scriptLoaded) {
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.id = 'razorpay-script';
         script.async = true;
-        script.onload = () => console.log('RazorPay script loaded');
+        script.onload = () => {
+          console.log('RazorPay script loaded successfully');
+          setScriptLoaded(true);
+        };
         script.onerror = () => {
           console.error('RazorPay script failed to load');
+          setScriptLoaded(false);
+          toast({
+            title: "Payment System Error",
+            description: "Failed to load the payment system. Please try again later.",
+            variant: "destructive"
+          });
+          
           const searchParams = new URLSearchParams(location.search);
           if (!searchParams.has('payment_error')) {
             navigate(`${location.pathname}?payment_error=script_load_failed`);
@@ -45,11 +62,12 @@ const RazorPayScript = () => {
     // Clean up function
     return () => {
       const script = document.getElementById('razorpay-script');
-      if (script && !location.pathname.includes('subscription') && !location.pathname.includes('checkout')) {
+      if (script && !needsRazorPay) {
         document.body.removeChild(script);
+        setScriptLoaded(false);
       }
     };
-  }, [location.pathname, navigate, location.search]);
+  }, [location.pathname, navigate, location.search, toast]);
 
   return null;
 };

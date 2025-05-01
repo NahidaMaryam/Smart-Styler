@@ -29,7 +29,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
       if (data?.order_id) {
         // Initialize RazorPay checkout
         const options = {
-          key: "rzp_test_YOUR_KEY_HERE", // Replace with your actual test key
+          key: data.key_id, // Get from the backend for security
           amount: data.amount,
           currency: data.currency,
           name: "Fashion Styler",

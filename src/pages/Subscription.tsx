@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from '@/hooks/useSubscription';
-import { Crown, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Crown, RefreshCw, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useLocation } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
 
 const Subscription = () => {
   const { 
@@ -20,6 +23,22 @@ const Subscription = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [paymentError, setPaymentError] = useState(false);
+  const location = useLocation();
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Check for success or error URL parameters
+    const params = new URLSearchParams(location.search);
+    if (params.has('success')) {
+      setSuccess(true);
+    }
+    if (params.has('payment_error')) {
+      setPaymentError(true);
+      setError(`Payment error: ${params.get('payment_error')}`);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -40,6 +59,32 @@ const Subscription = () => {
 
   const handleSelectPlan = async (plan: string) => {
     await createCheckoutSession(plan);
+  };
+  
+  const handleCancelSubscription = async () => {
+    try {
+      // Call the Supabase backend to cancel the subscription
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        body: { action: 'cancel' }
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      toast({
+        title: "Subscription canceled",
+        description: "Your subscription will remain active until the end of your billing period.",
+      });
+      
+      // Refresh subscription status
+      await checkSubscriptionStatus();
+      
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to cancel subscription",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -66,6 +111,22 @@ const Subscription = () => {
             )}
           </div>
 
+          {success && (
+            <Alert className="mb-6 border-green-500 bg-green-50 dark:bg-green-950">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertTitle>Success!</AlertTitle>
+              <AlertDescription>Your subscription has been activated successfully.</AlertDescription>
+            </Alert>
+          )}
+          
+          {paymentError && (
+            <Alert variant="destructive" className="mb-6">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle>Payment Failed</AlertTitle>
+              <AlertDescription>{error || "There was an issue with your payment. Please try again."}</AlertDescription>
+            </Alert>
+          )}
+
           {isChecking ? (
             <div className="flex justify-center my-12">
               <div className="flex flex-col items-center">
@@ -73,7 +134,7 @@ const Subscription = () => {
                 <p className="mt-4 text-muted-foreground">Checking subscription status...</p>
               </div>
             </div>
-          ) : error ? (
+          ) : error && !paymentError ? (
             <Alert variant="destructive" className="mb-6">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
@@ -93,9 +154,16 @@ const Subscription = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>
+                    <p className="mb-4">
                       Thank you for subscribing to Fashion Stylist Premium! You have access to all premium features including unlimited wardrobe storage, advanced color analysis, and AI-powered outfit recommendations.
                     </p>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleCancelSubscription}
+                      className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      Cancel Subscription
+                    </Button>
                   </CardContent>
                 </Card>
               )}
