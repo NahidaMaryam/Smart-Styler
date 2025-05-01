@@ -1,240 +1,174 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Lock, Mail, UserPlus } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Separator } from '@/components/ui/separator';
 
 const Signup = () => {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState('');
+  const [age, setAge] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  
-  // Check for returning OAuth users
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        localStorage.setItem('isSignedUp', 'true');
-        localStorage.setItem('isLoggedIn', 'true');
-        if (session.user?.email) {
-          localStorage.setItem('userEmail', session.user.email);
-        }
-        // For Google signup, set a default name if not available
-        const userName = session.user?.user_metadata?.full_name || 
-                         session.user?.user_metadata?.name || 
-                         "User";
-        localStorage.setItem('userName', userName);
-        navigate('/onboarding');
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-  
+  const { toast } = useToast();
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+    setError(null);
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: name,
-          }
-        }
+            full_name: fullName,
+            gender,
+            age
+          },
+        },
       });
-      
+
       if (error) {
-        console.error("Signup error:", error);
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        
-        // For demo purposes, allow signup anyway
-        localStorage.setItem('isSignedUp', 'true');
-        localStorage.setItem('userName', name);
-        localStorage.setItem('userEmail', email);
-        
-        toast({
-          title: "Account created (Demo Mode)",
-          description: "Let's set up your styling preferences!",
-        });
-        
-        navigate('/onboarding');
-        return;
+        throw error;
       }
-      
-      // Successful signup
-      localStorage.setItem('isSignedUp', 'true');
-      localStorage.setItem('userName', name);
-      localStorage.setItem('userEmail', email);
-      
+
       toast({
         title: "Account created",
-        description: "Let's set up your styling preferences!",
+        description: "Check your email to verify your account.",
       });
-      
-      navigate('/onboarding');
-    } catch (error: any) {
-      console.error("Signup error caught:", error);
-      
-      // For demo purposes, allow signup anyway
-      localStorage.setItem('isSignedUp', 'true');
-      localStorage.setItem('userName', name);
+
+      // Save some data to local storage for immediate use
+      localStorage.setItem('userName', fullName);
       localStorage.setItem('userEmail', email);
       
-      toast({
-        title: "Account created (Demo Mode)",
-        description: "Let's set up your styling preferences!",
-      });
-      
+      // Create onboarding data
+      const onboardingData = {
+        gender,
+        age
+      };
+      localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
+
+      // Redirect to onboarding or home page
       navigate('/onboarding');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setError(error.message || 'An error occurred during signup');
+      toast({
+        title: "Signup failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setIsGoogleLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/onboarding',
-        }
-      });
-      
-      if (error) {
-        console.error("Google signup error:", error);
-        toast({
-          title: "Google signup failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-      
-      // The actual redirect and session handling happens automatically
-      // when the user returns from Google OAuth flow via onAuthStateChange
-    } catch (error: any) {
-      console.error("Google signup error caught:", error);
-      toast({
-        title: "Google signup failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-  
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <UserPlus className="h-16 w-16 rounded-full bg-primary/10 p-3 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your information to get started with Smart Styler
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSignup}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="name" 
-                  type="text" 
-                  placeholder="John Doe" 
-                  className="pl-10" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+    <div className="flex justify-center items-center min-h-screen bg-background py-12 px-4">
+      <div className="w-full max-w-md">
+        <Card className="border-accent/20">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+            <CardDescription className="text-center">
+              Enter your details below to create your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="name@example.com" 
-                  className="pl-10" 
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="password" 
-                  type="password" 
-                  className="pl-10" 
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={8}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Password must be at least 8 characters long
-              </p>
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Sign up"}
-            </Button>
-
-            <div className="flex items-center gap-4 my-4">
-              <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground">OR</span>
-              <Separator className="flex-1" />
-            </div>
-
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={handleGoogleSignup}
-              disabled={isGoogleLoading}
-              className="w-full"
-            >
-              {isGoogleLoading ? "Connecting..." : "Sign up with Google"}
-            </Button>
+              
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="non-binary">Non-binary</SelectItem>
+                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age">Age Range</Label>
+                <Select value={age} onValueChange={setAge}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your age range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="18-24">18-24</SelectItem>
+                    <SelectItem value="25-34">25-34</SelectItem>
+                    <SelectItem value="35-44">35-44</SelectItem>
+                    <SelectItem value="45-54">45-54</SelectItem>
+                    <SelectItem value="55+">55+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating account..." : "Sign up"}
+              </Button>
+            </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm">
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline">
-                Log in
+              <Link to="/login" className="text-accent hover:underline">
+                Login
               </Link>
-            </div>
+            </p>
           </CardFooter>
-        </form>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };

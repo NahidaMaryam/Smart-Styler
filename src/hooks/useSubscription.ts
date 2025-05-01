@@ -19,17 +19,38 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const createCheckoutSession = async (planId: string) => {
     setIsLoading(true);
     try {
-      // This will need to call a Supabase Edge Function that creates a Stripe checkout session
+      // Call the Supabase Edge Function to create a RazorPay checkout session
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planId }
       });
       
       if (error) throw new Error(error.message);
       
-      if (data?.url) {
-        window.location.href = data.url;
+      if (data?.order_id) {
+        // Initialize RazorPay checkout
+        const options = {
+          key: "rzp_test_YOUR_KEY_HERE", // Replace with your actual test key
+          amount: data.amount,
+          currency: data.currency,
+          name: "Fashion Styler",
+          description: `${planId.replace('_', ' ')} Subscription`,
+          order_id: data.order_id,
+          handler: function (response: any) {
+            // Call the verify-payment edge function to verify the payment
+            verifyPayment(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
+          },
+          prefill: {
+            email: data.email || "",
+          },
+          theme: {
+            color: "#3399cc"
+          }
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error('No order ID returned');
       }
     } catch (error: any) {
       toast({
@@ -43,11 +64,47 @@ export const useSubscription = (): UseSubscriptionReturn => {
     }
   };
 
+  const verifyPayment = async (paymentId: string, orderId: string, signature: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: { 
+          payment_id: paymentId, 
+          order_id: orderId, 
+          signature: signature 
+        }
+      });
+      
+      if (error) throw new Error(error.message);
+      
+      if (data?.success) {
+        toast({
+          title: "Payment Successful",
+          description: "Your subscription has been activated!",
+        });
+        
+        // Refresh subscription status
+        await checkSubscriptionStatus();
+        
+        // Redirect to subscription page
+        window.location.href = '/subscription?success=true';
+      } else {
+        throw new Error('Payment verification failed');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Payment Error",
+        description: error.message || "Failed to verify payment",
+        variant: "destructive"
+      });
+      console.error('Error verifying payment:', error);
+    }
+  };
+
   const manageSubscription = async () => {
     setIsLoading(true);
     try {
-      // This will need to call a Supabase Edge Function that creates a Stripe customer portal session
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
+      // Call Supabase Edge Function that creates a RazorPay subscription management portal
+      const { data, error } = await supabase.functions.invoke('subscription-portal', {
         body: {}
       });
       
@@ -73,7 +130,6 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const checkSubscriptionStatus = async (): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // This will need to call a Supabase Edge Function that checks the subscription status
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         body: {}
       });

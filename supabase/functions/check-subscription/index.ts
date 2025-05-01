@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -31,19 +30,16 @@ serve(async (req) => {
     
     const user = userData.user;
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2023-10-16",
-    });
-
-    // Find the customer in Stripe
-    const customers = await stripe.customers.list({
-      email: user.email,
-      limit: 1,
-    });
-
-    if (customers.data.length === 0) {
-      // No customer found, user is on free plan
+    // Get the profile data
+    const { data: profileData, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("subscription_status, subscription_tier, subscription_end")
+      .eq("id", user.id)
+      .single();
+    
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      // No subscription info found
       return new Response(
         JSON.stringify({ 
           subscribed: false,
@@ -53,18 +49,44 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const customerId = customers.data[0].id;
-
-    // Check for active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      expand: ["data.default_payment_method"],
-    });
-
-    if (subscriptions.data.length === 0) {
-      // No active subscription, user is on free plan
+    
+    // If no subscription or invalid/expired subscription
+    if (!profileData.subscription_status || 
+        profileData.subscription_status !== "active" || 
+        (profileData.subscription_end && new Date(profileData.subscription_end) < new Date())) {
+      
+      // If subscription is expired, update status
+      if (profileData.subscription_status === "active" && 
+          profileData.subscription_end && 
+          new Date(profileData.subscription_end) < new Date()) {
+        
+        await supabaseClient
+          .from("profiles")
+          .update({
+            subscription_status: "expired"
+          })
+          .eq("id", user.id);
+          
+        // Also update subscriptions table if it exists
+        const { data: subData } = await supabaseClient
+          .from("subscriptions")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1);
+          
+        if (subData && subData.length > 0) {
+          await supabaseClient
+            .from("subscriptions")
+            .update({
+              status: "expired",
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", subData[0].id);
+        }
+      }
+      
       return new Response(
         JSON.stringify({ 
           subscribed: false,
@@ -74,23 +96,14 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Get subscription details
-    const subscription = subscriptions.data[0];
-    const priceId = subscription.items.data[0].price.id;
     
-    // Get price details to determine the plan tier
-    const price = await stripe.prices.retrieve(priceId);
-    
-    // Determine if annual or monthly based on the price interval
-    const isAnnual = price.recurring?.interval === "year";
-    
+    // Active subscription found
     return new Response(
       JSON.stringify({
         subscribed: true,
-        subscription_tier: isAnnual ? "Premium Annual" : "Premium",
-        subscription_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        customer_id: customerId
+        subscription_tier: profileData.subscription_tier || "Premium",
+        subscription_end: profileData.subscription_end,
+        user_id: user.id
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
