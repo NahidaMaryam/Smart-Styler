@@ -49,10 +49,10 @@ const Header: React.FC = () => {
       <div className="flex items-center space-x-4">
         {!isLoading && (
           <Link to="/subscription" className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-md text-sm",
+            "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
             isSubscribed 
-              ? "bg-accent/10 text-accent border border-accent/20" 
-              : "bg-muted/50 text-muted-foreground border border-border"
+              ? "bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30" 
+              : "bg-muted/40 text-muted-foreground/90 border border-muted-foreground/20 hover:bg-muted/60"
           )}>
             {isSubscribed ? (
               <>
