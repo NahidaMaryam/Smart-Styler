@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
@@ -7,10 +7,47 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, MessageSquare, Shirt, Palette } from 'lucide-react';
 import WeatherStyleTips from '@/components/home/WeatherStyleTips';
+import PlanStatusBanner from '@/components/subscription/PlanStatusBanner';
+import PremiumFeatures from '@/components/home/PremiumFeatures';
+import { supabase } from '@/integrations/supabase/client';
 
 const HomePage = () => {
-  const username = "Fashion Lover"; // This would come from user authentication
+  const [username, setUsername] = useState("Fashion Lover");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showPremiumFeatures, setShowPremiumFeatures] = useState(false);
   const currentSeason = "Spring"; // This would be determined based on current date
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      
+      if (session?.user) {
+        // Get user profile to display name
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (data?.full_name) {
+          setUsername(data.full_name.split(' ')[0] || "Fashion Lover");
+        }
+        
+        // Show premium features upsell for free users (50% chance)
+        // This creates a simple A/B testing scenario
+        if (!localStorage.getItem('premium_shown')) {
+          const showUpsell = Math.random() > 0.5;
+          setShowPremiumFeatures(showUpsell);
+          localStorage.setItem('premium_shown', JSON.stringify(showUpsell));
+        } else {
+          setShowPremiumFeatures(JSON.parse(localStorage.getItem('premium_shown') || 'false'));
+        }
+      }
+    };
+    
+    checkAuthStatus();
+  }, []);
 
   const features = [
     {
@@ -68,6 +105,9 @@ const HomePage = () => {
             </div>
           </section>
 
+          {/* Subscription Status Banner - only shown for authenticated users */}
+          {isAuthenticated && <PlanStatusBanner />}
+
           {/* Weather-based styling tips */}
           <WeatherStyleTips />
 
@@ -97,6 +137,9 @@ const HomePage = () => {
               ))}
             </div>
           </section>
+
+          {/* Premium Features Upsell - only shown to free users with 50% probability */}
+          {isAuthenticated && showPremiumFeatures && <PremiumFeatures />}
 
           {/* Seasonal Tips Section */}
           <section className="py-10">
