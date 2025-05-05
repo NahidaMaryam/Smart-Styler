@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shirt, Footprints, Tag, Upload, Plus, RefreshCw } from 'lucide-react';
 import OutfitSuggestions from '@/components/wardrobe/OutfitSuggestions';
+import AvatarCreator from '@/components/wardrobe/AvatarCreator';
+import OutfitRecommendations from '@/components/wardrobe/OutfitRecommendations';
 
 interface ClothingItem {
   id: string;
@@ -95,11 +97,17 @@ const Wardrobe = () => {
           Upload and manage your clothing items for personalized style recommendations.
         </p>
         
+        {/* Avatar Creator and Virtual Try-On Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <AvatarCreator userItems={items} />
+          <OutfitRecommendations userItems={items} />
+        </div>
+        
         {items.length > 0 && (
           <OutfitSuggestions items={items} />
         )}
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>

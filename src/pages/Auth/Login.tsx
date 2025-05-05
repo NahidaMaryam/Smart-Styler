@@ -35,6 +35,7 @@ const Login = () => {
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       if (event === 'SIGNED_IN' && session) {
         localStorage.setItem('isLoggedIn', 'true');
         if (session.user?.email) {
@@ -55,6 +56,7 @@ const Login = () => {
     setAuthError(null);
     
     try {
+      console.log("Attempting login with:", email);
       // Try to authenticate with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -73,7 +75,11 @@ const Login = () => {
         return;
       }
       
+      console.log("Login successful:", data);
       localStorage.setItem('isLoggedIn', 'true');
+      if (data.user?.email) {
+        localStorage.setItem('userEmail', data.user.email);
+      }
       
       toast({
         title: "Login successful",
