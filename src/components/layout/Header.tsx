@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Clock, User, Crown, Star } from 'lucide-react';
@@ -10,23 +10,45 @@ import { cn } from '@/lib/utils';
 
 const Header: React.FC = () => {
   const { currentPlan, checkSubscriptionStatus } = useSubscription();
-  const [isSubscribed, setIsSubscribed] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [checkAttempts, setCheckAttempts] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkStatus = async () => {
       try {
+        // Only show loading for the first attempt
+        if (checkAttempts === 0) {
+          setIsLoading(true);
+        }
+        
         const status = await checkSubscriptionStatus();
         setIsSubscribed(status);
+        setIsLoading(false);
+        // Reset attempts counter on success
+        setCheckAttempts(0);
       } catch (error) {
         console.error("Error checking subscription status:", error);
-      } finally {
         setIsLoading(false);
+        
+        // Only retry up to 3 times to prevent infinite loops
+        if (checkAttempts < 3) {
+          setCheckAttempts(prev => prev + 1);
+        }
       }
     };
     
     checkStatus();
-  }, [checkSubscriptionStatus]);
+    
+    // Set up interval for periodic checks, but only if we haven't exceeded attempts
+    const intervalId = checkAttempts < 3 ? 
+      setInterval(checkStatus, 300000) : // Check every 5 minutes if successful
+      null;
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [checkSubscriptionStatus, checkAttempts]);
 
   return (
     <header className="w-full py-4 px-6 bg-background border-b border-border flex items-center justify-between">

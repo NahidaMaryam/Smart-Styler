@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -19,6 +19,21 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const createCheckoutSession = async (planId: string) => {
     setIsLoading(true);
     try {
+      // Get the current user's session first
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to complete this action",
+          variant: "destructive"
+        });
+        setTimeout(() => {
+          window.location.href = '/login?redirect=/subscription';
+        }, 1500);
+        return;
+      }
+      
       // Call the Supabase Edge Function to create a RazorPay checkout session
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planId }
@@ -47,8 +62,17 @@ export const useSubscription = (): UseSubscriptionReturn => {
           }
         };
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
+        // Check if RazorPay is available
+        if (window && (window as any).Razorpay) {
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } else {
+          toast({
+            title: "Payment Error",
+            description: "Payment system is not loaded. Please try again later.",
+            variant: "destructive"
+          });
+        }
       } else {
         throw new Error('No order ID returned');
       }
@@ -103,6 +127,21 @@ export const useSubscription = (): UseSubscriptionReturn => {
   const manageSubscription = async () => {
     setIsLoading(true);
     try {
+      // Check authentication first
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to manage your subscription",
+          variant: "destructive"
+        });
+        setTimeout(() => {
+          window.location.href = '/login?redirect=/subscription';
+        }, 1500);
+        return;
+      }
+      
       // Call Supabase Edge Function that creates a RazorPay subscription management portal
       const { data, error } = await supabase.functions.invoke('subscription-portal', {
         body: {}
@@ -127,14 +166,28 @@ export const useSubscription = (): UseSubscriptionReturn => {
     }
   };
 
-  const checkSubscriptionStatus = async (): Promise<boolean> => {
+  const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Check authentication first
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      // If not authenticated, return false but don't show error
+      if (!sessionData.session) {
+        setCurrentPlan('free');
+        return false;
+      }
+      
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         body: {}
       });
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        // Don't show toast for authentication errors, just handle gracefully
+        console.log('Subscription check error:', error);
+        setCurrentPlan('free');
+        return false;
+      }
       
       if (data) {
         setCurrentPlan(data.subscribed ? 
@@ -145,17 +198,14 @@ export const useSubscription = (): UseSubscriptionReturn => {
       
       return false;
     } catch (error: any) {
-      toast({
-        title: "Subscription Check Error",
-        description: error.message || "Failed to check subscription status",
-        variant: "destructive"
-      });
+      // Log the error but don't show a toast to avoid continuous alerts
       console.error('Error checking subscription:', error);
+      setCurrentPlan('free');
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   return {
     createCheckoutSession,

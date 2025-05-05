@@ -24,6 +24,7 @@ const RazorPayScript = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [loadAttempts, setLoadAttempts] = useState(0);
   
   useEffect(() => {
     // Check if we need to load the script on this page
@@ -31,19 +32,27 @@ const RazorPayScript = () => {
                           location.pathname.includes('checkout') ||
                           new URLSearchParams(location.search).has('payment');
     
-    if (needsRazorPay) {
-      if (!document.getElementById('razorpay-script') && !scriptLoaded) {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.id = 'razorpay-script';
-        script.async = true;
-        script.onload = () => {
-          console.log('RazorPay script loaded successfully');
-          setScriptLoaded(true);
-        };
-        script.onerror = () => {
-          console.error('RazorPay script failed to load');
-          setScriptLoaded(false);
+    if (needsRazorPay && !scriptLoaded && loadAttempts < 3) {
+      // Remove any existing script to avoid duplicates
+      const existingScript = document.getElementById('razorpay-script');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
+      
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.id = 'razorpay-script';
+      script.async = true;
+      script.onload = () => {
+        console.log('RazorPay script loaded successfully');
+        setScriptLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('RazorPay script failed to load');
+        setScriptLoaded(false);
+        setLoadAttempts(prev => prev + 1);
+        
+        if (loadAttempts >= 2) {
           toast({
             title: "Payment System Error",
             description: "Failed to load the payment system. Please try again later.",
@@ -54,20 +63,22 @@ const RazorPayScript = () => {
           if (!searchParams.has('payment_error')) {
             navigate(`${location.pathname}?payment_error=script_load_failed`);
           }
-        };
-        document.body.appendChild(script);
-      }
+        }
+      };
+      document.body.appendChild(script);
     }
     
     // Clean up function
     return () => {
-      const script = document.getElementById('razorpay-script');
-      if (script && !needsRazorPay) {
-        document.body.removeChild(script);
-        setScriptLoaded(false);
+      if (!needsRazorPay) {
+        const script = document.getElementById('razorpay-script');
+        if (script) {
+          document.body.removeChild(script);
+          setScriptLoaded(false);
+        }
       }
     };
-  }, [location.pathname, navigate, location.search, toast]);
+  }, [location.pathname, navigate, location.search, toast, scriptLoaded, loadAttempts]);
 
   return null;
 };

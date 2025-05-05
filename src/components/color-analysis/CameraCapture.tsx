@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, X } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,32 @@ const CameraCapture = ({ onImageCapture }: CameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+
+  // Clean up camera stream when component unmounts
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  // Start video playback once stream is set
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play().catch(e => {
+          console.error("Error playing video:", e);
+          toast({
+            title: "Camera Error",
+            description: "Could not start video stream. Please check camera permissions.",
+            variant: "destructive"
+          });
+        });
+      };
+    }
+  }, [cameraStream, toast]);
 
   const handleCameraCapture = async () => {
     try {
@@ -38,17 +64,20 @@ const CameraCapture = ({ onImageCapture }: CameraCaptureProps) => {
         }
         setCameraActive(false);
       } else {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user" },
+        // Request camera access with improved constraints
+        const constraints = {
+          video: { 
+            facingMode: "user",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
           audio: false 
-        });
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         
         setCameraStream(stream);
         setCameraActive(true);
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
         
         toast({
           title: "Camera Access Granted",
@@ -88,7 +117,8 @@ const CameraCapture = ({ onImageCapture }: CameraCaptureProps) => {
             <video 
               ref={videoRef}
               autoPlay 
-              playsInline 
+              playsInline
+              muted
               className="w-full h-auto rounded-md"
             />
           </div>
