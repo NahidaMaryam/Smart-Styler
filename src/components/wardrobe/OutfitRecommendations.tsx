@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Shirt, RefreshCw } from "lucide-react";
+import { Shirt, RefreshCw, Camera, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface OutfitRecommendationsProps {
@@ -18,6 +17,7 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
     title: string;
     description: string;
     imageUrl: string;
+    items: string[];
   }>(null);
   const { toast } = useToast();
 
@@ -25,18 +25,33 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
   const recommendationOptions = [
     {
       title: "Business Casual Look",
-      description: "A professional but comfortable outfit combining your navy blazer, white shirt, and beige pants. Perfect for office meetings or casual business events.",
-      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Business+Casual+Outfit"
+      description: "A professional but comfortable outfit combining navy blazer, white shirt, and beige pants. Perfect for office meetings or casual business events.",
+      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Business+Casual+Outfit",
+      items: ["blazer", "shirt", "pants"]
     },
     {
       title: "Evening Date Night",
-      description: "A stylish combination for a romantic evening featuring your black shirt and dark jeans. Add your leather jacket for a touch of sophistication.",
-      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Date+Night+Outfit"
+      description: "A stylish combination for a romantic evening featuring black shirt and dark jeans. Add your leather jacket for a touch of sophistication.",
+      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Date+Night+Outfit",
+      items: ["shirt", "jeans", "jacket"]
     },
     {
       title: "Weekend Brunch Look",
-      description: "A relaxed yet put-together outfit with your light blue shirt and khaki shorts. Perfect for a weekend brunch with friends or family gatherings.",
-      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Weekend+Brunch+Outfit"
+      description: "A relaxed yet put-together outfit with light blue shirt and khaki shorts. Perfect for a weekend brunch with friends or family gatherings.",
+      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Weekend+Brunch+Outfit",
+      items: ["shirt", "shorts", "sneakers"]
+    },
+    {
+      title: "Office Interview",
+      description: "A professional outfit featuring a crisp white shirt, charcoal suit, and polished shoes to make a great first impression.",
+      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Interview+Outfit",
+      items: ["suit", "shirt", "dress shoes"]
+    },
+    {
+      title: "Summer Festival",
+      description: "A colorful and comfortable outfit perfect for outdoor festivals with a graphic tee, denim shorts, and comfortable sneakers.",
+      imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Festival+Outfit",
+      items: ["t-shirt", "shorts", "hat", "sunglasses"]
     }
   ];
 
@@ -73,6 +88,13 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
     });
   };
 
+  const capturePhoto = () => {
+    toast({
+      title: "Photo Captured",
+      description: "Your avatar photo has been saved to your gallery!",
+    });
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -91,39 +113,72 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
             placeholder="Example: Wedding ceremony, job interview, casual Friday at work..."
             value={occasion}
             onChange={(e) => setOccasion(e.target.value)}
+            className="min-h-[80px]"
           />
         </div>
         
-        <Button 
-          onClick={generateRecommendation} 
-          disabled={isGenerating || !occasion.trim()}
-          className="w-full"
-        >
-          {isGenerating ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Generating recommendation...
-            </>
-          ) : (
-            "Generate Outfit Suggestion"
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            onClick={generateRecommendation} 
+            disabled={isGenerating || !occasion.trim()}
+            className="flex-1"
+          >
+            {isGenerating ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              "Generate Outfit Suggestion"
+            )}
+          </Button>
+          
+          {recommendation && (
+            <Button 
+              variant="outline" 
+              onClick={() => setRecommendation(null)}
+              className="sm:w-24"
+            >
+              Clear
+            </Button>
           )}
-        </Button>
+        </div>
         
         {recommendation && (
-          <div className="mt-6 space-y-4">
-            <div className="bg-secondary p-4 rounded-lg">
-              <h3 className="font-medium text-lg mb-2">{recommendation.title}</h3>
+          <div className="mt-6 space-y-4 animate-fade-in">
+            <div className="bg-secondary/50 p-4 rounded-lg border">
+              <h3 className="font-medium text-lg mb-2 text-primary">{recommendation.title}</h3>
               <p className="text-sm text-muted-foreground mb-4">{recommendation.description}</p>
-              <div className="flex justify-center mb-4">
+              
+              <div className="flex justify-center mb-4 relative bg-white rounded-lg p-2">
                 <img 
                   src={recommendation.imageUrl} 
                   alt="Outfit Recommendation" 
                   className="h-48 object-contain rounded-md"
                 />
               </div>
-              <Button onClick={tryOnAvatar} variant="outline" className="w-full">
-                Try on your avatar
-              </Button>
+              
+              {recommendation.items && recommendation.items.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">Suggested Items:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {recommendation.items.map((item, index) => (
+                      <div key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs flex items-center">
+                        <Check className="w-3 h-3 mr-1" /> {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={tryOnAvatar} variant="outline" className="flex-1">
+                  Try on your avatar
+                </Button>
+                <Button onClick={capturePhoto} variant="outline" className="flex-1">
+                  <Camera className="w-4 h-4 mr-2" /> Capture photo
+                </Button>
+              </div>
             </div>
           </div>
         )}
