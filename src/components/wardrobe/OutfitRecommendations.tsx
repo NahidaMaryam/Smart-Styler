@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Shirt, RefreshCw, Camera, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import AvatarRenderer from './AvatarRenderer';
 
 interface OutfitRecommendationsProps {
   userItems: any[];
@@ -18,6 +19,7 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
     description: string;
     imageUrl: string;
     items: string[];
+    outfitType: string;
   }>(null);
   const { toast } = useToast();
 
@@ -27,31 +29,36 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
       title: "Business Casual Look",
       description: "A professional but comfortable outfit combining navy blazer, white shirt, and beige pants. Perfect for office meetings or casual business events.",
       imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Business+Casual+Outfit",
-      items: ["blazer", "shirt", "pants"]
+      items: ["blazer", "shirt", "pants"],
+      outfitType: "formal1"
     },
     {
       title: "Evening Date Night",
       description: "A stylish combination for a romantic evening featuring black shirt and dark jeans. Add your leather jacket for a touch of sophistication.",
       imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Date+Night+Outfit",
-      items: ["shirt", "jeans", "jacket"]
+      items: ["shirt", "jeans", "jacket"],
+      outfitType: "casual1"
     },
     {
       title: "Weekend Brunch Look",
       description: "A relaxed yet put-together outfit with light blue shirt and khaki shorts. Perfect for a weekend brunch with friends or family gatherings.",
       imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Weekend+Brunch+Outfit",
-      items: ["shirt", "shorts", "sneakers"]
+      items: ["shirt", "shorts", "sneakers"],
+      outfitType: "casual2"
     },
     {
       title: "Office Interview",
       description: "A professional outfit featuring a crisp white shirt, charcoal suit, and polished shoes to make a great first impression.",
       imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Interview+Outfit",
-      items: ["suit", "shirt", "dress shoes"]
+      items: ["suit", "shirt", "dress shoes"],
+      outfitType: "formal2"
     },
     {
       title: "Summer Festival",
       description: "A colorful and comfortable outfit perfect for outdoor festivals with a graphic tee, denim shorts, and comfortable sneakers.",
       imageUrl: "https://placehold.co/300x400/e2e8f0/1e293b?text=Festival+Outfit",
-      items: ["t-shirt", "shorts", "hat", "sunglasses"]
+      items: ["t-shirt", "shorts", "hat", "sunglasses"],
+      outfitType: "sport1"
     }
   ];
 
@@ -93,6 +100,16 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
       title: "Photo Captured",
       description: "Your avatar photo has been saved to your gallery!",
     });
+  };
+
+  // Default avatar appearance for recommendation previews
+  const defaultAvatarProps = {
+    hairStyle: "medium",
+    hairColor: "brown",
+    skinTone: "medium",
+    faceShape: "oval",
+    facialHair: "none",
+    eyeColor: "brown"
   };
 
   return (
@@ -151,11 +168,14 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
               <p className="text-sm text-muted-foreground mb-4">{recommendation.description}</p>
               
               <div className="flex justify-center mb-4 relative bg-white rounded-lg p-2">
-                <img 
-                  src={recommendation.imageUrl} 
-                  alt="Outfit Recommendation" 
-                  className="h-48 object-contain rounded-md"
-                />
+                {/* Replace placeholder with AvatarRenderer */}
+                <div className="h-48 rounded-md relative flex items-center justify-center">
+                  <AvatarRenderer
+                    {...defaultAvatarProps}
+                    outfit={recommendation.outfitType}
+                    className="w-40 h-40 transform scale-150"
+                  />
+                </div>
               </div>
               
               {recommendation.items && recommendation.items.length > 0 && (

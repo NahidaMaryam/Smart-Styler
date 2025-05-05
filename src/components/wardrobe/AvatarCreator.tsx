@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Shirt, Edit, Scissors, Image, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import AvatarRenderer from './AvatarRenderer';
 
 // Define avatar parts and options
 const HAIR_STYLES = ["short", "medium", "long", "curly", "wavy", "afro", "braids", "bald"];
@@ -46,9 +47,6 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   const [lookName, setLookName] = useState("");
   const { toast } = useToast();
 
-  // Generate avatar preview URL based on current settings
-  const avatarUrl = `https://placehold.co/500x500/8B5CF6/FFFFFF?text=Avatar+Preview%0AHair:+${hairStyle}+${hairColor}%0ASkin:+${skinTone}%0AFace:+${faceShape}%0AEyes:+${eyeColor}%0AFacial:+${facialHair}`;
-
   const tryOnOutfit = (itemId: string) => {
     setSelectedOutfit(itemId);
     toast({
@@ -77,7 +75,6 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       facialHair,
       eyeColor,
       outfit: selectedOutfit,
-      image: avatarUrl
     };
     
     setSavedLooks(prev => [...prev, newLook]);
@@ -121,11 +118,28 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
           <div className="flex flex-col items-center justify-center lg:w-1/3">
             <div className="relative w-64 h-64 mb-4 bg-gradient-to-br from-purple-500 to-violet-800 rounded-full overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105">
               <div className="absolute inset-1 rounded-full bg-white/95 overflow-hidden flex items-center justify-center">
-                <img 
-                  src={selectedOutfit ? SAMPLE_OUTFITS.find(o => o.id === selectedOutfit)?.image : avatarUrl} 
-                  alt="Avatar Preview" 
-                  className="w-full h-full object-cover"
-                />
+                {selectedOutfit ? (
+                  <AvatarRenderer
+                    hairStyle={hairStyle}
+                    hairColor={hairColor}
+                    skinTone={skinTone}
+                    faceShape={faceShape}
+                    facialHair={facialHair}
+                    eyeColor={eyeColor}
+                    outfit={selectedOutfit}
+                    className="transform scale-[1.8] translate-y-[20%]"
+                  />
+                ) : (
+                  <AvatarRenderer
+                    hairStyle={hairStyle}
+                    hairColor={hairColor}
+                    skinTone={skinTone}
+                    faceShape={faceShape}
+                    facialHair={facialHair}
+                    eyeColor={eyeColor}
+                    className="transform scale-125"
+                  />
+                )}
               </div>
             </div>
             
@@ -153,7 +167,15 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                             onClick={() => loadSavedLook(look)}
                           >
                             <div className="aspect-square rounded-full overflow-hidden border-2 border-primary/30 hover:border-primary">
-                              <img src={look.image} alt={look.name} className="w-full h-full object-cover" />
+                              <AvatarRenderer
+                                hairStyle={look.hairStyle}
+                                hairColor={look.hairColor}
+                                skinTone={look.skinTone}
+                                faceShape={look.faceShape}
+                                facialHair={look.facialHair}
+                                eyeColor={look.eyeColor}
+                                outfit={look.outfit}
+                              />
                             </div>
                             <p className="text-xs text-center mt-1 truncate">{look.name}</p>
                           </div>
@@ -225,6 +247,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     </div>
                   </TabsContent>
                   
+                  {/* Face Tab */}
                   <TabsContent value="face" className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Face Shape</label>
@@ -243,6 +266,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     </div>
                   </TabsContent>
                   
+                  {/* Skin Tab */}
                   <TabsContent value="skin" className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Skin Tone</label>
@@ -262,6 +286,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     </div>
                   </TabsContent>
                   
+                  {/* Eyes Tab */}
                   <TabsContent value="eyes" className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Eye Color</label>
@@ -281,6 +306,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     </div>
                   </TabsContent>
                   
+                  {/* Facial Hair Tab */}
                   <TabsContent value="facial" className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Facial Hair</label>
@@ -347,11 +373,19 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                         onClick={() => tryOnOutfit(outfit.id)}
                       >
                         <div className="aspect-square bg-secondary relative rounded-md overflow-hidden mb-1">
-                          <img 
-                            src={outfit.image} 
-                            alt={outfit.name} 
-                            className="w-full h-full object-contain"
-                          />
+                          {/* Replace placeholder with outfit visualization */}
+                          <div className="w-full h-full flex items-center justify-center">
+                            <AvatarRenderer
+                              hairStyle={hairStyle}
+                              hairColor={hairColor}
+                              skinTone={skinTone}
+                              faceShape={faceShape}
+                              facialHair={facialHair}
+                              eyeColor={eyeColor}
+                              outfit={outfit.id}
+                              className="transform scale-[0.6]"
+                            />
+                          </div>
                           {selectedOutfit === outfit.id && 
                             <div className="absolute top-1 right-1 bg-primary rounded-full p-1">
                               <Check className="w-3 h-3 text-white" />
