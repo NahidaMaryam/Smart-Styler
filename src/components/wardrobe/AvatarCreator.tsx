@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, TShirt, Edit, Scissors, Image } from "lucide-react";
+import { User, Shirt, Edit, Scissors, Image } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 // Define avatar parts and options
@@ -84,7 +84,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                   Customize Avatar
                 </TabsTrigger>
                 <TabsTrigger value="tryOn">
-                  <TShirt className="w-4 h-4 mr-2" />
+                  <Shirt className="w-4 h-4 mr-2" />
                   Try On Outfits
                 </TabsTrigger>
               </TabsList>
