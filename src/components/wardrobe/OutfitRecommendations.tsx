@@ -167,18 +167,14 @@ const OutfitRecommendations: React.FC<OutfitRecommendationsProps> = ({ userItems
               <h3 className="font-medium text-lg mb-2 text-primary">{recommendation.title}</h3>
               <p className="text-sm text-muted-foreground mb-4">{recommendation.description}</p>
               
-              <div className="flex justify-center mb-4">
-                {/* Enhanced 3D Avatar container */}
-                <div className="h-64 w-64 rounded-lg relative bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-1 shadow-lg overflow-hidden perspective-container">
-                  <div className="absolute inset-0 bg-white/80 rounded-lg overflow-hidden">
-                    <div className="w-full h-full flex items-center justify-center transform-wrapper">
-                      <AvatarRenderer
-                        {...defaultAvatarProps}
-                        outfit={recommendation.outfitType}
-                        className="w-44 h-44 transform scale-150 hover:scale-[1.55] transition-transform duration-500 avatar-3d-effect"
-                      />
-                    </div>
-                  </div>
+              <div className="flex justify-center mb-4 relative bg-white rounded-lg p-2">
+                {/* Replace placeholder with AvatarRenderer */}
+                <div className="h-48 rounded-md relative flex items-center justify-center">
+                  <AvatarRenderer
+                    {...defaultAvatarProps}
+                    outfit={recommendation.outfitType}
+                    className="w-40 h-40 transform scale-150"
+                  />
                 </div>
               </div>
               

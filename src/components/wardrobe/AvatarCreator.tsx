@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,9 +46,6 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   const [savedLooks, setSavedLooks] = useState<any[]>([]);
   const [lookName, setLookName] = useState("");
   const { toast } = useToast();
-  
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
 
   const tryOnOutfit = (itemId: string) => {
     setSelectedOutfit(itemId);
@@ -103,26 +101,6 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
     });
   };
 
-  // Handle avatar 3D effect with mouse movement
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Calculate rotation based on mouse position
-    const rotX = ((y / rect.height) - 0.5) * 10; // -5 to 5 degrees
-    const rotY = ((x / rect.width) - 0.5) * -10; // 5 to -5 degrees
-    
-    setRotateX(rotX);
-    setRotateY(rotY);
-  };
-  
-  const handleMouseLeave = () => {
-    // Reset rotation when mouse leaves
-    setRotateX(0);
-    setRotateY(0);
-  };
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -136,21 +114,10 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Avatar Preview - Enhanced with 3D effect */}
+          {/* Avatar Preview */}
           <div className="flex flex-col items-center justify-center lg:w-1/3">
-            <div 
-              className="relative w-64 h-64 mb-4 overflow-hidden perspective-container"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
-              <div className="absolute inset-0 avatar-bg"></div>
-              <div 
-                className="absolute inset-1 rounded-full bg-white/95 overflow-hidden flex items-center justify-center transform-wrapper"
-                style={{ 
-                  transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-                  transition: 'transform 0.1s ease-out'
-                }}
-              >
+            <div className="relative w-64 h-64 mb-4 bg-gradient-to-br from-purple-500 to-violet-800 rounded-full overflow-hidden shadow-xl transform transition-all duration-300 hover:scale-105">
+              <div className="absolute inset-1 rounded-full bg-white/95 overflow-hidden flex items-center justify-center">
                 {selectedOutfit ? (
                   <AvatarRenderer
                     hairStyle={hairStyle}
@@ -160,7 +127,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     facialHair={facialHair}
                     eyeColor={eyeColor}
                     outfit={selectedOutfit}
-                    className="transform scale-[1.8] translate-y-[20%] avatar-3d-effect"
+                    className="transform scale-[1.8] translate-y-[20%]"
                   />
                 ) : (
                   <AvatarRenderer
@@ -170,13 +137,12 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     faceShape={faceShape}
                     facialHair={facialHair}
                     eyeColor={eyeColor}
-                    className="transform scale-125 avatar-3d-effect"
+                    className="transform scale-125"
                   />
                 )}
               </div>
             </div>
             
-            {/* Save look section */}
             <div className="w-full space-y-2">
               <div className="flex items-center gap-2">
                 <input 
@@ -189,7 +155,6 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                 <Button onClick={saveAvatar} className="w-24">Save</Button>
               </div>
               
-              {/* Saved looks carousel */}
               {savedLooks.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-medium mb-2">Saved Looks</h4>
@@ -225,7 +190,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
             </div>
           </div>
           
-          {/* Customization Controls - Better organized with clear sections */}
+          {/* Customization Controls */}
           <div className="flex-1">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-4">
@@ -239,7 +204,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                 </TabsTrigger>
               </TabsList>
               
-              {/* Customize Tab - Improved grid layout */}
+              {/* Customize Tab */}
               <TabsContent value="customize" className="space-y-4 animate-fade-in">
                 <Tabs value={customizeSection} onValueChange={setCustomizeSection}>
                   <TabsList className="mb-4 flex-wrap">
@@ -253,11 +218,11 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                   <TabsContent value="hair" className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Hair Style</label>
-                      <div className="avatar-grid">
+                      <div className="grid grid-cols-4 gap-2">
                         {HAIR_STYLES.map(style => (
                           <div 
                             key={style}
-                            className={`avatar-option p-2 border rounded-lg text-center text-sm relative ${hairStyle === style ? 'selected' : ''}`}
+                            className={`cursor-pointer p-2 border rounded-lg text-center text-sm relative ${hairStyle === style ? 'border-primary bg-primary/10' : 'hover:bg-accent/20'}`}
                             onClick={() => setHairStyle(style)}
                           >
                             {hairStyle === style && <Check className="absolute top-1 right-1 w-3 h-3 text-primary" />}
@@ -362,7 +327,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                 </Tabs>
               </TabsContent>
               
-              {/* Try On Tab - Using grid for better layout */}
+              {/* Try On Tab */}
               <TabsContent value="tryOn" className="animate-fade-in">
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium mb-2">Your Wardrobe Items</h3>
@@ -372,7 +337,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                       {userItems.map(item => (
                         <div 
                           key={item.id} 
-                          className={`avatar-option p-2 border rounded-lg cursor-pointer ${selectedOutfit === item.id ? 'selected' : ''}`}
+                          className={`p-2 border rounded-lg cursor-pointer hover:bg-accent/20 transition-all ${selectedOutfit === item.id ? 'border-primary bg-primary/10' : ''}`}
                           onClick={() => tryOnOutfit(item.id)}
                         >
                           <div className="aspect-square bg-secondary relative rounded-md overflow-hidden mb-1">
@@ -404,10 +369,10 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     {SAMPLE_OUTFITS.map(outfit => (
                       <div 
                         key={outfit.id} 
-                        className={`avatar-option p-2 border rounded-lg cursor-pointer ${selectedOutfit === outfit.id ? 'selected' : ''}`}
+                        className={`p-2 border rounded-lg cursor-pointer hover:bg-accent/20 transition-all ${selectedOutfit === outfit.id ? 'border-primary bg-primary/10' : ''}`}
                         onClick={() => tryOnOutfit(outfit.id)}
                       >
-                        <div className="aspect-square bg-secondary relative rounded-md overflow-hidden mb-1 perspective-container">
+                        <div className="aspect-square bg-secondary relative rounded-md overflow-hidden mb-1">
                           {/* Replace placeholder with outfit visualization */}
                           <div className="w-full h-full flex items-center justify-center">
                             <AvatarRenderer

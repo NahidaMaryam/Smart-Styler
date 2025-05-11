@@ -97,8 +97,8 @@ const Wardrobe = () => {
           Upload and manage your clothing items for personalized style recommendations.
         </p>
         
-        {/* Improved layout with content-grid class */}
-        <div className="content-grid mb-8">
+        {/* Avatar Creator and Virtual Try-On Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <AvatarCreator userItems={items} />
           <OutfitRecommendations userItems={items} />
         </div>
@@ -107,9 +107,8 @@ const Wardrobe = () => {
           <OutfitSuggestions items={items} />
         )}
         
-        {/* Improved grid layout for wardrobe management */}
-        <div className="content-grid mt-8">
-          <div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+          <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Add New Item</CardTitle>
@@ -207,7 +206,7 @@ const Wardrobe = () => {
             </Card>
           </div>
           
-          <div>
+          <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-6">
                 <TabsTrigger value="all">All</TabsTrigger>
