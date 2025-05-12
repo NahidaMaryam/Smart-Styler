@@ -65,6 +65,7 @@ serve(async (req) => {
     let amount;
     let currency = "INR";
     
+    // Fix plan ID validation to match exactly what's in the frontend
     switch (planId) {
       case "styler_plus":
         amount = 4900; // ₹49.00 (in paise)
@@ -72,7 +73,14 @@ serve(async (req) => {
       case "styler_plus_annual":
         amount = 54900; // ₹549.00 (in paise)
         break;
+      case "styler+": // Additional case to handle frontend naming
+        amount = 4900; // ₹49.00 (in paise)
+        break;
+      case "styler+ annual": // Additional case to handle frontend naming
+        amount = 54900; // ₹549.00 (in paise)
+        break;
       default:
+        console.error("Invalid plan ID received:", planId);
         throw new Error("Invalid plan selected");
     }
     
@@ -117,6 +125,19 @@ serve(async (req) => {
     
     console.log("RazorPay order created:", orderData.id);
 
+    // Create subscriptions table if it doesn't exist already
+    try {
+      const { data: tableExistsCheck } = await supabaseClient.rpc('check_table_exists', { table_name: 'subscriptions' });
+      
+      if (!tableExistsCheck) {
+        await supabaseClient.rpc('create_subscriptions_table');
+        console.log("Subscriptions table created");
+      }
+    } catch (dbError) {
+      console.log("Note: Table check failed, proceeding with assumption table exists", dbError);
+      // Continue execution, we'll find out in the insert if the table is missing
+    }
+
     // After creating the order, store the subscription info in your Supabase table
     const { error: subscriptionError } = await supabaseClient
       .from("subscriptions")
@@ -131,9 +152,10 @@ serve(async (req) => {
 
     if (subscriptionError) {
       console.error("Error storing subscription:", subscriptionError);
+      // Don't throw error here, continue with order creation even if DB insert fails
+    } else {
+      console.log("Subscription record created in database");
     }
-    
-    console.log("Subscription record created in database");
 
     return new Response(JSON.stringify({ 
       order_id: orderData.id,

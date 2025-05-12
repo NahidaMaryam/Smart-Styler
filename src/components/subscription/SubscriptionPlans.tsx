@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Star } from 'lucide-react';
+import { Check, Star, Loader2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SubscriptionPlan {
@@ -91,7 +91,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     
     setIsProcessing(planName);
     try {
-      await onSelectPlan(planName.toLowerCase().replace(" ", "_"));
+      // Convert plan name to ID format the backend expects
+      const planId = planName.toLowerCase().replace(" ", "_");
+      console.log(`Selecting plan: ${planName}, sending ID: ${planId}`);
+      await onSelectPlan(planId);
     } catch (error) {
       toast({
         title: "Subscription Error",
@@ -122,7 +125,7 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           <CardHeader>
             <CardTitle>{plan.name}</CardTitle>
             <CardDescription>
-              <span className="text-xl font-bold">{plan.price}</span>
+              <div className="text-xl font-bold">{plan.price}</div>
               <p className="mt-2">{plan.description}</p>
             </CardDescription>
           </CardHeader>
@@ -143,8 +146,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
               variant={currentPlan === plan.name.toLowerCase().replace(" ", "_") ? "outline" : "default"}
               disabled={currentPlan === plan.name.toLowerCase().replace(" ", "_") || isProcessing !== null}
             >
-              {isProcessing === plan.name ? 
-                "Processing..." : plan.buttonText}
+              {isProcessing === plan.name ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : plan.buttonText}
             </Button>
           </CardFooter>
         </Card>

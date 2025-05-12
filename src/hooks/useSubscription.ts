@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -89,11 +88,24 @@ export const useSubscription = (): UseSubscriptionReturn => {
         } else {
           console.error("RazorPay script not loaded");
           toast({
-            title: "Payment Error",
-            description: "Payment system is not loaded. Please refresh the page and try again.",
+            title: "Payment System Not Ready",
+            description: "Please wait while we load the payment system or try refreshing the page.",
             variant: "destructive"
           });
-          setIsLoading(false);
+          
+          // Try loading the script again
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.id = 'razorpay-script-retry';
+          script.async = true;
+          script.onload = () => {
+            console.log("RazorPay script loaded on retry");
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+          };
+          document.body.appendChild(script);
+          
+          setTimeout(() => setIsLoading(false), 5000);
         }
       } else {
         throw new Error('No order ID returned from the server');

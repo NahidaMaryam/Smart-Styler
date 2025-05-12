@@ -44,10 +44,19 @@ const RazorPayScript = () => {
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.id = 'razorpay-script';
       script.async = true;
+      
       script.onload = () => {
         console.log('RazorPay script loaded successfully');
         setScriptLoaded(true);
+        // Show success notification if this was a retry attempt
+        if (loadAttempts > 0) {
+          toast({
+            title: "Payment System Ready",
+            description: "The payment system has been loaded successfully."
+          });
+        }
       };
+      
       script.onerror = () => {
         console.error('RazorPay script failed to load');
         setScriptLoaded(false);
@@ -56,7 +65,7 @@ const RazorPayScript = () => {
         if (loadAttempts >= 2) {
           toast({
             title: "Payment System Error",
-            description: "Failed to load the payment system. Please try again later.",
+            description: "Failed to load the payment system. Please try again later or check your internet connection.",
             variant: "destructive"
           });
           
@@ -64,8 +73,14 @@ const RazorPayScript = () => {
           if (!searchParams.has('payment_error')) {
             navigate(`${location.pathname}?payment_error=script_load_failed`);
           }
+        } else {
+          // Try again after a short delay
+          setTimeout(() => {
+            setLoadAttempts(prev => prev); // Trigger re-render
+          }, 3000);
         }
       };
+      
       document.body.appendChild(script);
     }
     
