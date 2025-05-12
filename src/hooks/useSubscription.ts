@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -43,72 +44,72 @@ export const useSubscription = (): UseSubscriptionReturn => {
       
       if (error) {
         console.error("Function error:", error);
-        throw new Error(error.message);
+        throw new Error(error.message || "Failed to create checkout session");
       }
       
       console.log("Checkout session created:", data);
       
-      if (data?.order_id) {
-        // Initialize RazorPay checkout
-        const options = {
-          key: data.key_id, // Get from the backend for security
-          amount: data.amount,
-          currency: data.currency,
-          name: "Fashion Styler",
-          description: `${planId.replace('_', ' ')} Subscription`,
-          order_id: data.order_id,
-          handler: function (response: any) {
-            console.log("Payment successful:", response);
-            // Call the verify-payment edge function to verify the payment
-            verifyPayment(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
-          },
-          prefill: {
-            email: data.email || "",
-          },
-          theme: {
-            color: "#3399cc"
-          },
-          modal: {
-            ondismiss: function() {
-              console.log("Payment modal dismissed");
-              toast({
-                title: "Payment Cancelled",
-                description: "You closed the payment window. You can try again anytime.",
-              });
-              setIsLoading(false);
-            }
+      if (!data?.order_id) {
+        throw new Error('No order ID returned from the server');
+      }
+      
+      // Initialize RazorPay checkout
+      const options = {
+        key: data.key_id, 
+        amount: data.amount,
+        currency: data.currency,
+        name: "Fashion Styler",
+        description: `${planId.replace('_', ' ')} Subscription`,
+        order_id: data.order_id,
+        handler: function (response: any) {
+          console.log("Payment successful:", response);
+          // Call the verify-payment edge function to verify the payment
+          verifyPayment(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
+        },
+        prefill: {
+          email: data.email || "",
+        },
+        theme: {
+          color: "#3399cc"
+        },
+        modal: {
+          ondismiss: function() {
+            console.log("Payment modal dismissed");
+            toast({
+              title: "Payment Cancelled",
+              description: "You closed the payment window. You can try again anytime.",
+            });
+            setIsLoading(false);
           }
-        };
+        }
+      };
 
-        // Check if RazorPay is available
-        if (window && (window as any).Razorpay) {
-          console.log("Opening RazorPay modal");
+      // Check if RazorPay is available
+      if (window && (window as any).Razorpay) {
+        console.log("Opening RazorPay modal");
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } else {
+        console.error("RazorPay script not loaded");
+        toast({
+          title: "Payment System Not Ready",
+          description: "Please wait while we load the payment system or try refreshing the page.",
+          variant: "destructive"
+        });
+        
+        // Try loading the script again
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.id = 'razorpay-script-retry';
+        script.async = true;
+        script.onload = () => {
+          console.log("RazorPay script loaded on retry");
           const rzp = new (window as any).Razorpay(options);
           rzp.open();
-        } else {
-          console.error("RazorPay script not loaded");
-          toast({
-            title: "Payment System Not Ready",
-            description: "Please wait while we load the payment system or try refreshing the page.",
-            variant: "destructive"
-          });
-          
-          // Try loading the script again
-          const script = document.createElement('script');
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.id = 'razorpay-script-retry';
-          script.async = true;
-          script.onload = () => {
-            console.log("RazorPay script loaded on retry");
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-          };
-          document.body.appendChild(script);
-          
-          setTimeout(() => setIsLoading(false), 5000);
-        }
-      } else {
-        throw new Error('No order ID returned from the server');
+        };
+        document.body.appendChild(script);
+        
+        setTimeout(() => setIsLoading(false), 5000);
       }
     } catch (error: any) {
       console.error('Error creating checkout session:', error);

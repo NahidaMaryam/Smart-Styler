@@ -91,10 +91,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     
     setIsProcessing(planName);
     try {
-      // Convert plan name to ID format the backend expects
-      const planId = planName.toLowerCase().replace(" ", "_");
-      console.log(`Selecting plan: ${planName}, sending ID: ${planId}`);
-      await onSelectPlan(planId);
+      // Send the exact plan name as received from the UI
+      // The backend will normalize it as needed
+      console.log(`Selecting plan: ${planName}`);
+      await onSelectPlan(planName);
     } catch (error) {
       toast({
         title: "Subscription Error",
@@ -124,9 +124,9 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           )}
           <CardHeader>
             <CardTitle>{plan.name}</CardTitle>
-            <CardDescription>
-              <div className="text-xl font-bold">{plan.price}</div>
-              <p className="mt-2">{plan.description}</p>
+            <div className="text-xl font-bold mt-2">{plan.price}</div>
+            <CardDescription className="mt-2">
+              {plan.description}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">

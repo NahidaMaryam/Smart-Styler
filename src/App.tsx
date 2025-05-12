@@ -32,14 +32,14 @@ const RazorPayScript = () => {
                           location.pathname.includes('checkout') ||
                           new URLSearchParams(location.search).has('payment');
     
-    if (needsRazorPay && !scriptLoaded && loadAttempts < 3) {
+    if (needsRazorPay && !scriptLoaded && loadAttempts < 5) {
       // Remove any existing script to avoid duplicates
       const existingScript = document.getElementById('razorpay-script');
       if (existingScript) {
         document.body.removeChild(existingScript);
       }
       
-      console.log("Loading RazorPay script...");
+      console.log("Loading RazorPay script... (attempt", loadAttempts + 1, ")");
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.id = 'razorpay-script';
@@ -58,26 +58,29 @@ const RazorPayScript = () => {
       };
       
       script.onerror = () => {
-        console.error('RazorPay script failed to load');
+        console.error('RazorPay script failed to load (attempt', loadAttempts + 1, ')');
         setScriptLoaded(false);
         setLoadAttempts(prev => prev + 1);
         
-        if (loadAttempts >= 2) {
+        // Show error toast after multiple failed attempts
+        if (loadAttempts >= 3) {
           toast({
             title: "Payment System Error",
             description: "Failed to load the payment system. Please try again later or check your internet connection.",
             variant: "destructive"
           });
           
+          // Add error parameter to URL if not already present
           const searchParams = new URLSearchParams(location.search);
           if (!searchParams.has('payment_error')) {
             navigate(`${location.pathname}?payment_error=script_load_failed`);
           }
         } else {
-          // Try again after a short delay
+          // Try again after a short delay with exponential backoff
+          const delay = Math.pow(2, loadAttempts) * 1000;
           setTimeout(() => {
             setLoadAttempts(prev => prev); // Trigger re-render
-          }, 3000);
+          }, delay);
         }
       };
       
