@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -103,16 +102,16 @@ const HomePage = () => {
         <PageContainer>
           {/* Hero Section with Background Image */}
           <section className="py-10 md:py-16 flex flex-col items-center text-center relative rounded-2xl overflow-hidden">
-            {/* Background image container with increased transparency */}
+            {/* Background image container with adjusted transparency */}
             <div 
-              className="absolute inset-0 bg-cover bg-center opacity-5 z-0" 
+              className="absolute inset-0 bg-cover bg-center opacity-20 z-0" 
               style={{ 
                 backgroundImage: `url('${backgroundImage}')`,
                 backgroundPosition: 'center 30%'
               }}
             >
-              {/* Overlay gradient for better text readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background/70"></div>
+              {/* Overlay gradient for better text readability while maintaining visibility */}
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-background/60"></div>
             </div>
             {/* Content container */}
             <div className="relative z-10 px-4 py-8 md:py-12 w-full max-w-2xl mx-auto">
