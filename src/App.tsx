@@ -39,6 +39,7 @@ const RazorPayScript = () => {
         document.body.removeChild(existingScript);
       }
       
+      console.log("Loading RazorPay script...");
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.id = 'razorpay-script';

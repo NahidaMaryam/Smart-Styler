@@ -16,23 +16,50 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Create Supabase client using the anon key for user authentication
+  // Create Supabase client using the service role key for admin operations
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
   try {
+    console.log("Create checkout function called");
+    
     // Retrieve authenticated user
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("Missing authorization header");
+    }
+    
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    
+    if (userError || !userData.user) {
+      console.error("Authentication error:", userError);
+      throw new Error("User not authenticated");
+    }
+    
+    const user = userData.user;
+    if (!user?.email) {
+      throw new Error("User email not available");
+    }
+    
+    console.log("User authenticated:", user.id);
 
     // Get the requested plan from request body
-    const { planId } = await req.json();
-    if (!planId) throw new Error("Plan ID is required");
+    let reqBody;
+    try {
+      reqBody = await req.json();
+    } catch (e) {
+      throw new Error("Invalid request body");
+    }
+    
+    const { planId } = reqBody;
+    if (!planId) {
+      throw new Error("Plan ID is required");
+    }
+    
+    console.log("Plan selected:", planId);
 
     // Set amount based on the plan
     let amount;
@@ -48,9 +75,20 @@ serve(async (req) => {
       default:
         throw new Error("Invalid plan selected");
     }
+    
+    console.log("Amount set:", amount, currency);
 
+    // Check if we have RazorPay credentials
+    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
+    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error("RazorPay API credentials not configured");
+    }
+    
     // Create RazorPay order
-    const auth = btoa(`${Deno.env.get("RAZORPAY_KEY_ID")}:${Deno.env.get("RAZORPAY_KEY_SECRET")}`);
+    const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
+    console.log("Creating RazorPay order");
     
     const orderResponse = await fetch(`${RAZORPAY_API}orders`, {
       method: "POST",
@@ -73,8 +111,11 @@ serve(async (req) => {
     const orderData = await orderResponse.json();
     
     if (!orderResponse.ok) {
-      throw new Error(`RazorPay error: ${orderData.error?.description || "Failed to create order"}`);
+      console.error("RazorPay error:", orderData);
+      throw new Error(`RazorPay error: ${orderData.error?.description || JSON.stringify(orderData)}`);
     }
+    
+    console.log("RazorPay order created:", orderData.id);
 
     // After creating the order, store the subscription info in your Supabase table
     const { error: subscriptionError } = await supabaseClient
@@ -91,20 +132,24 @@ serve(async (req) => {
     if (subscriptionError) {
       console.error("Error storing subscription:", subscriptionError);
     }
+    
+    console.log("Subscription record created in database");
 
     return new Response(JSON.stringify({ 
       order_id: orderData.id,
       amount: amount,
       currency: currency,
       email: user.email,
-      key_id: Deno.env.get("RAZORPAY_KEY_ID")  // Send the key ID to the frontend
+      key_id: razorpayKeyId  // Send the key ID to the frontend
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     console.error("Checkout session error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : "Unknown error occurred" 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
