@@ -9,6 +9,8 @@ import { User, Shirt, Edit, Scissors, Image, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import AvatarRenderer from './AvatarRenderer';
+import ReadyPlayerMeCreator from '../profile/ReadyPlayerMeCreator';
+import { useUserData } from '@/hooks/useUserData';
 
 // Define avatar parts and options
 const HAIR_STYLES = ["short", "medium", "long", "curly", "wavy", "afro", "braids", "bald"];
@@ -45,7 +47,17 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   const [selectedOutfit, setSelectedOutfit] = useState<string | null>(null);
   const [savedLooks, setSavedLooks] = useState<any[]>([]);
   const [lookName, setLookName] = useState("");
+  const [isAvatarCreatorOpen, setIsAvatarCreatorOpen] = useState(false);
   const { toast } = useToast();
+  const { userData, updateUserData } = useUserData();
+
+  useEffect(() => {
+    // Load saved looks from localStorage
+    const savedLooksData = localStorage.getItem('savedAvatarLooks');
+    if (savedLooksData) {
+      setSavedLooks(JSON.parse(savedLooksData));
+    }
+  }, []);
 
   const tryOnOutfit = (itemId: string) => {
     setSelectedOutfit(itemId);
@@ -75,9 +87,12 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       facialHair,
       eyeColor,
       outfit: selectedOutfit,
+      avatarUrl: userData.avatarUrl,
     };
     
-    setSavedLooks(prev => [...prev, newLook]);
+    const updatedLooks = [...savedLooks, newLook];
+    setSavedLooks(updatedLooks);
+    localStorage.setItem('savedAvatarLooks', JSON.stringify(updatedLooks));
     setLookName("");
     
     toast({
@@ -99,6 +114,17 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       title: "Look Applied",
       description: `Applied "${look.name}" to your avatar.`,
     });
+  };
+
+  const handleAvatarCreated = (avatarUrl: string) => {
+    updateUserData({ avatarUrl });
+    
+    toast({
+      title: "3D Avatar Created",
+      description: "Your Ready Player Me avatar has been saved and can now be used with your wardrobe items!",
+    });
+    
+    setIsAvatarCreatorOpen(false);
   };
 
   return (
@@ -127,6 +153,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     facialHair={facialHair}
                     eyeColor={eyeColor}
                     outfit={selectedOutfit}
+                    avatarUrl={userData.avatarUrl}
                     className="transform scale-[1.8] translate-y-[20%]"
                   />
                 ) : (
@@ -137,6 +164,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     faceShape={faceShape}
                     facialHair={facialHair}
                     eyeColor={eyeColor}
+                    avatarUrl={userData.avatarUrl}
                     className="transform scale-125"
                   />
                 )}
@@ -144,6 +172,16 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
             </div>
             
             <div className="w-full space-y-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Button 
+                  onClick={() => setIsAvatarCreatorOpen(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {userData.avatarUrl ? "Change 3D Avatar" : "Create 3D Avatar"}
+                </Button>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input 
                   type="text"
@@ -402,6 +440,13 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
           </div>
         </div>
       </CardContent>
+      
+      {/* Ready Player Me Avatar Creator */}
+      <ReadyPlayerMeCreator 
+        isOpen={isAvatarCreatorOpen}
+        onClose={() => setIsAvatarCreatorOpen(false)}
+        onAvatarCreated={handleAvatarCreated}
+      />
     </Card>
   );
 };

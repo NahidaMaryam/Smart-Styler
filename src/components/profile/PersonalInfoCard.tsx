@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Edit2, Save, CheckCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ReadyPlayerMeCreator from './ReadyPlayerMeCreator';
 
 interface UserData {
   name: string;
@@ -19,6 +21,7 @@ interface UserData {
   bodyShape: string;
   height: string;
   weight: string;
+  avatarUrl?: string;
   colorAnalysis: {
     skinTone: string;
     undertone: string;
@@ -39,6 +42,7 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
   const [gender, setGender] = useState(userData.gender);
   const [age, setAge] = useState(userData.age);
   const [isBodyShapeDialogOpen, setIsBodyShapeDialogOpen] = useState(false);
+  const [isAvatarCreatorOpen, setIsAvatarCreatorOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -90,6 +94,17 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
     });
   };
   
+  const handleAvatarCreated = (avatarUrl: string) => {
+    updateUserData({ avatarUrl });
+    
+    // Save to localStorage
+    const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
+    onboardingData.avatarUrl = avatarUrl;
+    localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
+    
+    setIsAvatarCreatorOpen(false);
+  };
+  
   return (
     <>
       <Card>
@@ -105,9 +120,20 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                <User className="h-12 w-12" />
+                {userData.avatarUrl ? (
+                  <AvatarImage src={userData.avatarUrl} alt={userData.name} />
+                ) : (
+                  <AvatarFallback>
+                    <User className="h-12 w-12" />
+                  </AvatarFallback>
+                )}
               </Avatar>
-              <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 h-8 w-8 rounded-full">
+              <Button 
+                size="icon" 
+                variant="secondary" 
+                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                onClick={() => setIsAvatarCreatorOpen(true)}
+              >
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
@@ -315,6 +341,13 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
           </Form>
         </DialogContent>
       </Dialog>
+      
+      {/* Ready Player Me Avatar Creator */}
+      <ReadyPlayerMeCreator 
+        isOpen={isAvatarCreatorOpen}
+        onClose={() => setIsAvatarCreatorOpen(false)}
+        onAvatarCreated={handleAvatarCreated}
+      />
     </>
   );
 };
