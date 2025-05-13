@@ -117,7 +117,13 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
 
   const handleAvatarCreated = (avatarUrl: string) => {
     // Store the ZMO.ai generated avatar URL
+    console.log("Avatar created, setting URL:", avatarUrl);
     updateUserData({ zmoAvatarUrl: avatarUrl });
+    
+    // Add this to check if userData is being updated properly
+    setTimeout(() => {
+      console.log("Updated user data:", userData);
+    }, 100);
     
     toast({
       title: "Virtual Try-On Avatar Created",

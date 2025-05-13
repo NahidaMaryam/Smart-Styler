@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from 'lucide-react';
 
 interface AvatarRendererProps {
@@ -27,15 +27,23 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   avatarUrl,
   zmoAvatarUrl
 }) => {
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  // Handle image load errors
+  const handleImageError = () => {
+    console.error("Failed to load avatar image:", zmoAvatarUrl);
+    setImageError(true);
+  };
   
   // If we have a ZMO.ai avatar URL, prioritize rendering that
-  if (zmoAvatarUrl) {
+  if (zmoAvatarUrl && !imageError) {
     return (
       <div className={`relative w-full h-full flex items-center justify-center ${className}`}>
         <img 
           src={zmoAvatarUrl}
           alt="Your Virtual Try-On Avatar" 
           className="w-full h-full object-contain"
+          onError={handleImageError}
         />
       </div>
     );

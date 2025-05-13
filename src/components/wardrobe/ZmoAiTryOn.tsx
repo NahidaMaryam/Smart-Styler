@@ -73,17 +73,21 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
     setIsProcessing(true);
 
     try {
-      // Simulate API call to ZMO.ai
-      // In a real implementation, you would:
-      // 1. Create a FormData object with the image
-      // 2. Send it to your backend which would call ZMO.ai API
-      // 3. Get back the processed image URL
-
-      // For demonstration, we'll simulate a delay and then use a placeholder URL
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Find the selected outfit from userItems
+      const outfitItem = userItems.find(item => item.id === selectedOutfit);
       
-      // Simulating success response with a placeholder image
-      const mockGeneratedAvatarUrl = "https://placehold.co/400x600/e2e8f0/1e293b?text=Virtual+Try-On+Result";
+      // In a real implementation, we would call the ZMO.ai API here
+      // For now, we're using a simulation with the actual outfit image
+      // This simulates what would happen if ZMO.ai successfully processed the request
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Use the actual outfit image or a placeholder
+      const mockGeneratedAvatarUrl = outfitItem?.image || 
+        "https://placehold.co/400x600/e2e8f0/1e293b?text=Virtual+Try-On+Result";
+      
+      console.log("Generated avatar URL:", mockGeneratedAvatarUrl);
       setGeneratedAvatarUrl(mockGeneratedAvatarUrl);
       
       toast({
@@ -105,12 +109,19 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
   // Save the generated avatar
   const saveAvatar = () => {
     if (generatedAvatarUrl) {
+      console.log("Saving avatar with URL:", generatedAvatarUrl);
       onAvatarCreated(generatedAvatarUrl);
       toast({
         title: "Avatar saved",
         description: "Your virtual try-on avatar has been saved to your profile",
       });
       handleClose();
+    } else {
+      toast({
+        title: "No avatar to save",
+        description: "Please generate an avatar first",
+        variant: "destructive",
+      });
     }
   };
 
@@ -248,6 +259,10 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
                     src={generatedAvatarUrl} 
                     alt="Virtual Try-On Result" 
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      console.error("Avatar image failed to load");
+                      e.currentTarget.src = "https://placehold.co/400x600/e2e8f0/1e293b?text=Image+Load+Error";
+                    }}
                   />
                 </div>
               </div>
