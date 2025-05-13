@@ -4,17 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Save, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { UserData } from '@/hooks/useUserData';
 
-interface StylePreferences {
-  favoriteColors: string[];
-  preferredStyles: string[];
-  favoriteItems: string[];
+interface StylePreference {
+  id: string;
+  name: string;
+  enabled: boolean;
 }
 
 interface StylePreferencesCardProps {
-  stylePreferences: StylePreferences;
+  stylePreferences: StylePreference[];
   updateUserData?: (data: Partial<UserData>) => void;
 }
 
@@ -24,31 +24,27 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
   const [newItem, setNewItem] = useState('');
   const { toast } = useToast();
   
-  const [localPreferences, setLocalPreferences] = useState<StylePreferences>({
-    favoriteColors: [...stylePreferences.favoriteColors],
-    preferredStyles: [...stylePreferences.preferredStyles],
-    favoriteItems: [...stylePreferences.favoriteItems]
-  });
+  const [localPreferences, setLocalPreferences] = useState<StylePreference[]>([...stylePreferences]);
   
-  const addItem = (category: keyof StylePreferences, value: string) => {
-    if (!value.trim()) return;
+  const addPreference = (name: string) => {
+    if (!name.trim()) return;
     
-    setLocalPreferences(prev => ({
-      ...prev,
-      [category]: [...prev[category], value.trim()]
-    }));
+    const newPreference: StylePreference = {
+      id: `new-${Date.now()}`,
+      name: name.trim(),
+      enabled: true
+    };
+    
+    setLocalPreferences(prev => [...prev, newPreference]);
     
     // Reset input field
-    if (category === 'favoriteColors') setNewColor('');
-    else if (category === 'preferredStyles') setNewStyle('');
+    if (name === newColor) setNewColor('');
+    else if (name === newStyle) setNewStyle('');
     else setNewItem('');
   };
   
-  const removeItem = (category: keyof StylePreferences, index: number) => {
-    setLocalPreferences(prev => ({
-      ...prev,
-      [category]: prev[category].filter((_, i) => i !== index)
-    }));
+  const removePreference = (id: string) => {
+    setLocalPreferences(prev => prev.filter(pref => pref.id !== id));
   };
   
   const handleSave = () => {
@@ -62,6 +58,11 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
     }
   };
   
+  // Filter preferences by category (based on id prefix we can assume)
+  const colorPreferences = localPreferences.filter(p => p.id.startsWith('color-') || p.name.toLowerCase().includes('color'));
+  const styleTypePreferences = localPreferences.filter(p => p.id.startsWith('style-') || (!p.id.startsWith('color-') && !p.id.startsWith('item-')));
+  const itemPreferences = localPreferences.filter(p => p.id.startsWith('item-') || p.name.toLowerCase().includes('shirt') || p.name.toLowerCase().includes('pant') || p.name.toLowerCase().includes('dress'));
+  
   return (
     <Card>
       <CardHeader>
@@ -74,11 +75,11 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
         <div>
           <h3 className="text-lg font-medium mb-4">Favorite Colors</h3>
           <div className="flex flex-wrap gap-2 mb-2">
-            {localPreferences.favoriteColors.map((color, index) => (
-              <div key={index} className="px-3 py-1 rounded-full bg-secondary flex items-center">
-                {color}
+            {colorPreferences.map((color) => (
+              <div key={color.id} className="px-3 py-1 rounded-full bg-secondary flex items-center">
+                {color.name}
                 <button 
-                  onClick={() => removeItem('favoriteColors', index)} 
+                  onClick={() => removePreference(color.id)} 
                   className="ml-2 text-muted-foreground hover:text-destructive"
                 >
                   <X className="w-3 h-3" />
@@ -96,7 +97,7 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => addItem('favoriteColors', newColor)}
+              onClick={() => addPreference(newColor)}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add
@@ -107,11 +108,11 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
         <div>
           <h3 className="text-lg font-medium mb-4">Preferred Styles</h3>
           <div className="flex flex-wrap gap-2 mb-2">
-            {localPreferences.preferredStyles.map((style, index) => (
-              <div key={index} className="px-3 py-1 rounded-full bg-secondary flex items-center">
-                {style}
+            {styleTypePreferences.map((style) => (
+              <div key={style.id} className="px-3 py-1 rounded-full bg-secondary flex items-center">
+                {style.name}
                 <button 
-                  onClick={() => removeItem('preferredStyles', index)}
+                  onClick={() => removePreference(style.id)}
                   className="ml-2 text-muted-foreground hover:text-destructive"
                 >
                   <X className="w-3 h-3" />
@@ -129,7 +130,7 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => addItem('preferredStyles', newStyle)}
+              onClick={() => addPreference(newStyle)}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add
@@ -140,11 +141,11 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
         <div>
           <h3 className="text-lg font-medium mb-4">Favorite Clothing Items</h3>
           <div className="flex flex-wrap gap-2 mb-2">
-            {localPreferences.favoriteItems.map((item, index) => (
-              <div key={index} className="px-3 py-1 rounded-full bg-secondary flex items-center">
-                {item}
+            {itemPreferences.map((item) => (
+              <div key={item.id} className="px-3 py-1 rounded-full bg-secondary flex items-center">
+                {item.name}
                 <button 
-                  onClick={() => removeItem('favoriteItems', index)}
+                  onClick={() => removePreference(item.id)}
                   className="ml-2 text-muted-foreground hover:text-destructive"
                 >
                   <X className="w-3 h-3" />
@@ -162,7 +163,7 @@ const StylePreferencesCard: React.FC<StylePreferencesCardProps> = ({ stylePrefer
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => addItem('favoriteItems', newItem)}
+              onClick={() => addPreference(newItem)}
             >
               <Plus className="w-4 h-4 mr-1" />
               Add
