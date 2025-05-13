@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Shirt, Edit, Scissors, Image, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import AvatarRenderer from './AvatarRenderer';
-import ReadyPlayerMeCreator from '../profile/ReadyPlayerMeCreator';
+import ZmoAiTryOn from './ZmoAiTryOn';
 import { useUserData } from '@/hooks/useUserData';
 
 // Define avatar parts and options
@@ -47,7 +45,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   const [selectedOutfit, setSelectedOutfit] = useState<string | null>(null);
   const [savedLooks, setSavedLooks] = useState<any[]>([]);
   const [lookName, setLookName] = useState("");
-  const [isAvatarCreatorOpen, setIsAvatarCreatorOpen] = useState(false);
+  const [isZmoAiTryOnOpen, setIsZmoAiTryOnOpen] = useState(false);
   const { toast } = useToast();
   const { userData, updateUserData } = useUserData();
 
@@ -88,6 +86,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       eyeColor,
       outfit: selectedOutfit,
       avatarUrl: userData.avatarUrl,
+      zmoAvatarUrl: userData.zmoAvatarUrl,
     };
     
     const updatedLooks = [...savedLooks, newLook];
@@ -117,14 +116,15 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   };
 
   const handleAvatarCreated = (avatarUrl: string) => {
-    updateUserData({ avatarUrl });
+    // Store the ZMO.ai generated avatar URL
+    updateUserData({ zmoAvatarUrl: avatarUrl });
     
     toast({
-      title: "3D Avatar Created",
-      description: "Your Ready Player Me avatar has been saved and can now be used with your wardrobe items!",
+      title: "Virtual Try-On Avatar Created",
+      description: "Your ZMO.ai avatar has been saved and can now be used with your wardrobe items!",
     });
     
-    setIsAvatarCreatorOpen(false);
+    setIsZmoAiTryOnOpen(false);
   };
 
   return (
@@ -132,10 +132,10 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
       <CardHeader>
         <CardTitle className="flex items-center">
           <User className="mr-2 h-5 w-5" />
-          My Instagram Avatar
+          My Virtual Avatar
         </CardTitle>
         <CardDescription>
-          Customize your avatar and try on clothes from your wardrobe
+          Create your avatar and try on clothes from your wardrobe
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -154,6 +154,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     eyeColor={eyeColor}
                     outfit={selectedOutfit}
                     avatarUrl={userData.avatarUrl}
+                    zmoAvatarUrl={userData.zmoAvatarUrl}
                     className="transform scale-[1.8] translate-y-[20%]"
                   />
                 ) : (
@@ -165,6 +166,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                     facialHair={facialHair}
                     eyeColor={eyeColor}
                     avatarUrl={userData.avatarUrl}
+                    zmoAvatarUrl={userData.zmoAvatarUrl}
                     className="transform scale-125"
                   />
                 )}
@@ -174,11 +176,11 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
             <div className="w-full space-y-2">
               <div className="flex items-center gap-2 mb-4">
                 <Button 
-                  onClick={() => setIsAvatarCreatorOpen(true)}
+                  onClick={() => setIsZmoAiTryOnOpen(true)}
                   variant="outline"
                   className="w-full"
                 >
-                  {userData.avatarUrl ? "Change 3D Avatar" : "Create 3D Avatar"}
+                  {userData.zmoAvatarUrl ? "Change My Virtual Try-On" : "Create My Avatar"}
                 </Button>
               </div>
 
@@ -213,6 +215,8 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
                                 facialHair={look.facialHair}
                                 eyeColor={look.eyeColor}
                                 outfit={look.outfit}
+                                avatarUrl={look.avatarUrl}
+                                zmoAvatarUrl={look.zmoAvatarUrl}
                               />
                             </div>
                             <p className="text-xs text-center mt-1 truncate">{look.name}</p>
@@ -441,11 +445,12 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
         </div>
       </CardContent>
       
-      {/* Ready Player Me Avatar Creator */}
-      <ReadyPlayerMeCreator 
-        isOpen={isAvatarCreatorOpen}
-        onClose={() => setIsAvatarCreatorOpen(false)}
+      {/* ZMO.ai Virtual Try-On Creator */}
+      <ZmoAiTryOn 
+        isOpen={isZmoAiTryOnOpen}
+        onClose={() => setIsZmoAiTryOnOpen(false)}
         onAvatarCreated={handleAvatarCreated}
+        userItems={userItems}
       />
     </Card>
   );

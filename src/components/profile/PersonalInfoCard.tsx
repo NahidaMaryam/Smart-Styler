@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,12 +5,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Edit2, Save, CheckCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ReadyPlayerMeCreator from './ReadyPlayerMeCreator';
+import ZmoAiTryOn from '../wardrobe/ZmoAiTryOn';
+import { useUserData } from '@/hooks/useUserData';
 
 interface UserData {
   name: string;
@@ -22,6 +22,7 @@ interface UserData {
   height: string;
   weight: string;
   avatarUrl?: string;
+  zmoAvatarUrl?: string;
   colorAnalysis: {
     skinTone: string;
     undertone: string;
@@ -42,7 +43,7 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
   const [gender, setGender] = useState(userData.gender);
   const [age, setAge] = useState(userData.age);
   const [isBodyShapeDialogOpen, setIsBodyShapeDialogOpen] = useState(false);
-  const [isAvatarCreatorOpen, setIsAvatarCreatorOpen] = useState(false);
+  const [isZmoAiTryOnOpen, setIsZmoAiTryOnOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -95,15 +96,21 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
   };
   
   const handleAvatarCreated = (avatarUrl: string) => {
-    updateUserData({ avatarUrl });
+    updateUserData({ zmoAvatarUrl: avatarUrl });
     
     // Save to localStorage
     const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
-    onboardingData.avatarUrl = avatarUrl;
+    onboardingData.zmoAvatarUrl = avatarUrl;
     localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
     
-    setIsAvatarCreatorOpen(false);
+    setIsZmoAiTryOnOpen(false);
   };
+  
+  // Mock user items for the ZmoAiTryOn component
+  const mockUserItems = [
+    { id: "item1", type: "shirt", color: "blue", image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Blue+Shirt" },
+    { id: "item2", type: "pants", color: "black", image: "https://placehold.co/200x200/e2e8f0/1e293b?text=Black+Pants" }
+  ];
   
   return (
     <>
@@ -120,7 +127,9 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="relative">
               <Avatar className="h-24 w-24">
-                {userData.avatarUrl ? (
+                {userData.zmoAvatarUrl ? (
+                  <AvatarImage src={userData.zmoAvatarUrl} alt={userData.name} />
+                ) : userData.avatarUrl ? (
                   <AvatarImage src={userData.avatarUrl} alt={userData.name} />
                 ) : (
                   <AvatarFallback>
@@ -132,7 +141,7 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
                 size="icon" 
                 variant="secondary" 
                 className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                onClick={() => setIsAvatarCreatorOpen(true)}
+                onClick={() => setIsZmoAiTryOnOpen(true)}
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
@@ -342,11 +351,12 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
         </DialogContent>
       </Dialog>
       
-      {/* Ready Player Me Avatar Creator */}
-      <ReadyPlayerMeCreator 
-        isOpen={isAvatarCreatorOpen}
-        onClose={() => setIsAvatarCreatorOpen(false)}
+      {/* ZMO.ai Virtual Try-On */}
+      <ZmoAiTryOn 
+        isOpen={isZmoAiTryOnOpen}
+        onClose={() => setIsZmoAiTryOnOpen(false)}
         onAvatarCreated={handleAvatarCreated}
+        userItems={mockUserItems}
       />
     </>
   );

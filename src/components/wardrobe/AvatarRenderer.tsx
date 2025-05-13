@@ -11,7 +11,8 @@ interface AvatarRendererProps {
   eyeColor?: string;
   outfit?: string;
   className?: string;
-  avatarUrl?: string; // New prop for Ready Player Me avatar URL
+  avatarUrl?: string; // URL for Ready Player Me avatar
+  zmoAvatarUrl?: string; // New prop for ZMO.ai avatar URL
 }
 
 const AvatarRenderer: React.FC<AvatarRendererProps> = ({ 
@@ -23,10 +24,24 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   eyeColor = "brown",
   outfit,
   className = "",
-  avatarUrl
+  avatarUrl,
+  zmoAvatarUrl
 }) => {
   
-  // If we have a Ready Player Me avatar URL, render that instead
+  // If we have a ZMO.ai avatar URL, prioritize rendering that
+  if (zmoAvatarUrl) {
+    return (
+      <div className={`relative w-full h-full flex items-center justify-center ${className}`}>
+        <img 
+          src={zmoAvatarUrl}
+          alt="Your Virtual Try-On Avatar" 
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
+  }
+  
+  // If no ZMO avatar but we have Ready Player Me avatar URL, render that
   if (avatarUrl) {
     return (
       <div className={`relative w-full h-full flex items-center justify-center ${className}`}>

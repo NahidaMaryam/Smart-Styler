@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 interface ColorAnalysis {
@@ -28,6 +29,7 @@ export interface UserData {
   height: string;
   weight: string;
   avatarUrl?: string;
+  zmoAvatarUrl?: string; // Added for ZMO.ai avatar URL
   colorAnalysis: ColorAnalysis;
   stylePreferences: StylePreference[];
   notifications: NotificationSetting[];
@@ -43,6 +45,7 @@ export const useUserData = () => {
     height: '',
     weight: '',
     avatarUrl: '',
+    zmoAvatarUrl: '',
     colorAnalysis: {
       skinTone: 'Medium',
       undertone: 'Neutral',
@@ -109,6 +112,7 @@ export const useUserData = () => {
         if (parsedOnboardingData.height) newUserData.height = parsedOnboardingData.height;
         if (parsedOnboardingData.weight) newUserData.weight = parsedOnboardingData.weight;
         if (parsedOnboardingData.avatarUrl) newUserData.avatarUrl = parsedOnboardingData.avatarUrl;
+        if (parsedOnboardingData.zmoAvatarUrl) newUserData.zmoAvatarUrl = parsedOnboardingData.zmoAvatarUrl;
       }
       
       setUserData(newUserData);
