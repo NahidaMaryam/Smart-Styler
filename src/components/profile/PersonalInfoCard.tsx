@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } fr
 import { useForm } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ZmoAiTryOn from '../wardrobe/ZmoAiTryOn';
+import ReadyPlayerMeCreator from './ReadyPlayerMeCreator';
 import { useUserData } from '@/hooks/useUserData';
 
 interface UserData {
@@ -44,6 +45,7 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
   const [age, setAge] = useState(userData.age);
   const [isBodyShapeDialogOpen, setIsBodyShapeDialogOpen] = useState(false);
   const [isZmoAiTryOnOpen, setIsZmoAiTryOnOpen] = useState(false);
+  const [isReadyPlayerMeOpen, setIsReadyPlayerMeOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -95,7 +97,8 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
     });
   };
   
-  const handleAvatarCreated = (avatarUrl: string) => {
+  const handleZmoAvatarCreated = (avatarUrl: string) => {
+    console.log("ZMO Avatar created, setting URL:", avatarUrl);
     updateUserData({ zmoAvatarUrl: avatarUrl });
     
     // Save to localStorage
@@ -104,6 +107,18 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
     localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
     
     setIsZmoAiTryOnOpen(false);
+  };
+
+  const handleRPMAvatarCreated = (avatarUrl: string) => {
+    console.log("Ready Player Me Avatar created, setting URL:", avatarUrl);
+    updateUserData({ avatarUrl });
+    
+    // Save to localStorage
+    const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
+    onboardingData.avatarUrl = avatarUrl;
+    localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
+    
+    setIsReadyPlayerMeOpen(false);
   };
   
   // Mock user items for the ZmoAiTryOn component
@@ -137,14 +152,24 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
                   </AvatarFallback>
                 )}
               </Avatar>
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                onClick={() => setIsZmoAiTryOnOpen(true)}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
+              <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 text-xs"
+                  onClick={() => setIsReadyPlayerMeOpen(true)}
+                >
+                  3D Avatar
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 text-xs"
+                  onClick={() => setIsZmoAiTryOnOpen(true)}
+                >
+                  Try-On
+                </Button>
+              </div>
             </div>
             
             <div className="space-y-4 flex-1">
@@ -355,8 +380,15 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({ userData, updateUse
       <ZmoAiTryOn 
         isOpen={isZmoAiTryOnOpen}
         onClose={() => setIsZmoAiTryOnOpen(false)}
-        onAvatarCreated={handleAvatarCreated}
+        onAvatarCreated={handleZmoAvatarCreated}
         userItems={mockUserItems}
+      />
+
+      {/* Ready Player Me Avatar Creator */}
+      <ReadyPlayerMeCreator
+        isOpen={isReadyPlayerMeOpen}
+        onClose={() => setIsReadyPlayerMeOpen(false)}
+        onAvatarCreated={handleRPMAvatarCreated}
       />
     </>
   );

@@ -1,10 +1,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Save } from 'lucide-react';
 
 interface ReadyPlayerMeCreatorProps {
   onAvatarCreated: (avatarUrl: string) => void;
@@ -62,7 +61,7 @@ const ReadyPlayerMeCreator: React.FC<ReadyPlayerMeCreatorProps> = ({ onAvatarCre
       onAvatarCreated(avatarUrl);
       toast({
         title: "Avatar Saved",
-        description: "Your avatar has been saved to your profile.",
+        description: "Your 3D avatar has been saved to your profile.",
       });
     }
   };
@@ -72,9 +71,9 @@ const ReadyPlayerMeCreator: React.FC<ReadyPlayerMeCreatorProps> = ({ onAvatarCre
       if (!open) onClose();
     }}>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
-        <DialogTitle>Create Your Avatar</DialogTitle>
+        <DialogTitle>Create Your 3D Avatar</DialogTitle>
         <DialogDescription>
-          Customize your 3D avatar using Ready Player Me
+          Take a selfie or customize your 3D avatar with Ready Player Me
         </DialogDescription>
         
         <div className="relative flex-1 min-h-[500px] mt-4 rounded-md overflow-hidden border">

@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Shirt, Edit, Scissors, Image, Check } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import AvatarRenderer from './AvatarRenderer';
 import ZmoAiTryOn from './ZmoAiTryOn';
+import ReadyPlayerMeCreator from '../profile/ReadyPlayerMeCreator';
 import { useUserData } from '@/hooks/useUserData';
 
 // Define avatar parts and options
@@ -46,6 +47,7 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
   const [savedLooks, setSavedLooks] = useState<any[]>([]);
   const [lookName, setLookName] = useState("");
   const [isZmoAiTryOnOpen, setIsZmoAiTryOnOpen] = useState(false);
+  const [isReadyPlayerMeOpen, setIsReadyPlayerMeOpen] = useState(false);
   const { toast } = useToast();
   const { userData, updateUserData } = useUserData();
 
@@ -115,9 +117,9 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
     });
   };
 
-  const handleAvatarCreated = (avatarUrl: string) => {
+  const handleZmoAvatarCreated = (avatarUrl: string) => {
     // Store the ZMO.ai generated avatar URL
-    console.log("Avatar created, setting URL:", avatarUrl);
+    console.log("ZMO.ai Avatar created, setting URL:", avatarUrl);
     updateUserData({ zmoAvatarUrl: avatarUrl });
     
     // Add this to check if userData is being updated properly
@@ -131,6 +133,19 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
     });
     
     setIsZmoAiTryOnOpen(false);
+  };
+
+  const handleRpmAvatarCreated = (avatarUrl: string) => {
+    // Store the Ready Player Me avatar URL
+    console.log("Ready Player Me Avatar created, setting URL:", avatarUrl);
+    updateUserData({ avatarUrl });
+    
+    toast({
+      title: "3D Avatar Created",
+      description: "Your Ready Player Me avatar has been saved and can now be used with your wardrobe items!",
+    });
+    
+    setIsReadyPlayerMeOpen(false);
   };
 
   return (
@@ -182,11 +197,19 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
             <div className="w-full space-y-2">
               <div className="flex items-center gap-2 mb-4">
                 <Button 
+                  onClick={() => setIsReadyPlayerMeOpen(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {userData.avatarUrl ? "Change 3D Avatar" : "Create 3D Avatar"}
+                </Button>
+                
+                <Button 
                   onClick={() => setIsZmoAiTryOnOpen(true)}
                   variant="outline"
                   className="w-full"
                 >
-                  {userData.zmoAvatarUrl ? "Change My Virtual Try-On" : "Create My Avatar"}
+                  {userData.zmoAvatarUrl ? "Change Virtual Try-On" : "Create Try-On"}
                 </Button>
               </div>
 
@@ -451,12 +474,19 @@ const AvatarCreator: React.FC<AvatarCreatorProps> = ({ userItems }) => {
         </div>
       </CardContent>
       
-      {/* ZMO.ai Virtual Try-On Creator */}
+      {/* ZMO.ai Virtual Try-On Dialog */}
       <ZmoAiTryOn 
         isOpen={isZmoAiTryOnOpen}
         onClose={() => setIsZmoAiTryOnOpen(false)}
-        onAvatarCreated={handleAvatarCreated}
+        onAvatarCreated={handleZmoAvatarCreated}
         userItems={userItems}
+      />
+
+      {/* Ready Player Me Avatar Creator Dialog */}
+      <ReadyPlayerMeCreator
+        isOpen={isReadyPlayerMeOpen}
+        onClose={() => setIsReadyPlayerMeOpen(false)}
+        onAvatarCreated={handleRpmAvatarCreated}
       />
     </Card>
   );

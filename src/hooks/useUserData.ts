@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 interface ColorAnalysis {
@@ -28,8 +27,8 @@ export interface UserData {
   bodyShape: string;
   height: string;
   weight: string;
-  avatarUrl?: string;
-  zmoAvatarUrl?: string; // Added for ZMO.ai avatar URL
+  avatarUrl?: string;  // Ready Player Me avatar URL
+  zmoAvatarUrl?: string; // ZMO.ai avatar URL
   colorAnalysis: ColorAnalysis;
   stylePreferences: StylePreference[];
   notifications: NotificationSetting[];
@@ -125,6 +124,7 @@ export const useUserData = () => {
   }, [userData]);
 
   const updateUserData = (newData: Partial<UserData>) => {
+    console.log("Updating user data:", newData);
     setUserData(prevUserData => ({ ...prevUserData, ...newData }));
   };
 
