@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import CameraCapture from "@/components/color-analysis/CameraCapture";
 import { Camera, Upload, Loader2, Save, Image as ImageIcon } from "lucide-react";
 
 interface ZmoAiTryOnProps {
@@ -38,18 +39,20 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
     }
   };
 
-  // Handle webcam capture
-  const handleCameraCapture = () => {
-    // This would integrate with a webcam component
+  // Handle camera capture
+  const handleCameraCapture = (imageDataUrl: string) => {
+    setPreviewUrl(imageDataUrl);
+    setActiveTab("upload"); // Switch to upload tab to show the captured image
+    
     toast({
-      title: "Camera functionality",
-      description: "Camera capture would be implemented here with a webcam component",
+      title: "Photo Captured",
+      description: "Your photo has been captured successfully. Select an outfit to try on.",
     });
   };
 
   // Process the image with ZMO.ai API
   const processImage = async () => {
-    if (!selectedFile && !previewUrl) {
+    if (!previewUrl) {
       toast({
         title: "No image selected",
         description: "Please upload or capture an image first",
@@ -114,7 +117,7 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
   // Clean up when closing the dialog
   const handleClose = () => {
     // Clean up any object URLs to prevent memory leaks
-    if (previewUrl) {
+    if (previewUrl && selectedFile) {
       URL.revokeObjectURL(previewUrl);
     }
     setSelectedFile(null);
@@ -186,20 +189,7 @@ const ZmoAiTryOn: React.FC<ZmoAiTryOnProps> = ({
                 
                 <TabsContent value="camera" className="space-y-4">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <div className="flex flex-col items-center justify-center h-40">
-                      <Camera className="h-10 w-10 text-gray-400 mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Click below to take a photo
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        onClick={handleCameraCapture} 
-                        className="mt-4"
-                      >
-                        <Camera className="h-4 w-4 mr-2" />
-                        Open Camera
-                      </Button>
-                    </div>
+                    <CameraCapture onImageCapture={handleCameraCapture} />
                   </div>
                 </TabsContent>
               </Tabs>
