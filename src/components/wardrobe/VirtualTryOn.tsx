@@ -4,12 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shirt, User } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import AvatarRenderer from './AvatarRenderer';
 import MannequinSelector from './MannequinSelector';
 import ZmoAiTryOn from './ZmoAiTryOn';
-import ReadyPlayerMeCreator from '../profile/ReadyPlayerMeCreator';
 import { useUserData } from '@/hooks/useUserData';
 
 interface VirtualTryOnProps {
@@ -22,7 +21,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
   const [savedLooks, setSavedLooks] = useState<any[]>([]);
   const [lookName, setLookName] = useState("");
   const [isZmoAiTryOnOpen, setIsZmoAiTryOnOpen] = useState(false);
-  const [isReadyPlayerMeOpen, setIsReadyPlayerMeOpen] = useState(false);
   const [mannequinSettings, setMannequinSettings] = useState({
     type: "female",
     bodyType: "medium"
@@ -71,7 +69,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
       id: Date.now().toString(),
       name: lookName,
       outfit: selectedOutfit,
-      avatarUrl: userData.avatarUrl,
       zmoAvatarUrl: userData.zmoAvatarUrl,
       mannequinType: mannequinSettings.type,
       mannequinBodyType: mannequinSettings.bodyType
@@ -115,17 +112,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
     setIsZmoAiTryOnOpen(false);
   };
 
-  const handleRpmAvatarCreated = (avatarUrl: string) => {
-    updateUserData({ avatarUrl });
-    
-    toast({
-      title: "3D Avatar Created",
-      description: "Your Ready Player Me avatar has been saved and can now be used with your wardrobe items!",
-    });
-    
-    setIsReadyPlayerMeOpen(false);
-  };
-
   // Sample outfits for demonstration
   const SAMPLE_OUTFITS = [
     { id: "casual1", name: "Casual Outfit 1", image: "https://placehold.co/200x300/e2e8f0/1e293b?text=Casual+1" },
@@ -141,7 +127,7 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
           Virtual Try-On
         </CardTitle>
         <CardDescription>
-          Try on clothes with our virtual mannequin or AI avatars
+          Try on clothes with our virtual mannequin or AI avatar
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -153,7 +139,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
                 {selectedOutfit ? (
                   <AvatarRenderer
                     outfit={selectedOutfit}
-                    avatarUrl={activeTab === "3d" ? userData.avatarUrl : undefined}
                     zmoAvatarUrl={activeTab === "ai" ? userData.zmoAvatarUrl : undefined}
                     mannequinType={activeTab === "mannequin" ? mannequinSettings.type : undefined}
                     mannequinBodyType={activeTab === "mannequin" ? mannequinSettings.bodyType : undefined}
@@ -161,7 +146,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
                   />
                 ) : (
                   <AvatarRenderer
-                    avatarUrl={activeTab === "3d" ? userData.avatarUrl : undefined}
                     zmoAvatarUrl={activeTab === "ai" ? userData.zmoAvatarUrl : undefined}
                     mannequinType={activeTab === "mannequin" ? mannequinSettings.type : undefined}
                     mannequinBodyType={activeTab === "mannequin" ? mannequinSettings.bodyType : undefined}
@@ -173,14 +157,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
             
             <div className="w-full space-y-2">
               <div className="flex items-center gap-2 mb-4">
-                <Button 
-                  onClick={() => setIsReadyPlayerMeOpen(true)}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {userData.avatarUrl ? "Change 3D Avatar" : "Create 3D Avatar"}
-                </Button>
-                
                 <Button 
                   onClick={() => setIsZmoAiTryOnOpen(true)}
                   variant="outline"
@@ -215,7 +191,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
                             <div className="aspect-square rounded-full overflow-hidden border-2 border-primary/30 hover:border-primary">
                               <AvatarRenderer
                                 outfit={look.outfit}
-                                avatarUrl={look.avatarUrl}
                                 zmoAvatarUrl={look.zmoAvatarUrl}
                                 mannequinType={look.mannequinType}
                                 mannequinBodyType={look.mannequinBodyType}
@@ -237,7 +212,7 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
           {/* Customization Controls */}
           <div className="flex-1">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 mb-4">
+              <TabsList className="grid grid-cols-2 mb-4">
                 <TabsTrigger value="mannequin">
                   <User className="w-4 h-4 mr-2" />
                   Mannequin
@@ -245,10 +220,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
                 <TabsTrigger value="ai">
                   <Shirt className="w-4 h-4 mr-2" />
                   AI Try-On
-                </TabsTrigger>
-                <TabsTrigger value="3d">
-                  <User className="w-4 h-4 mr-2" />
-                  3D Avatar
                 </TabsTrigger>
               </TabsList>
               
@@ -279,31 +250,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
                       </p>
                       <Button onClick={() => setIsZmoAiTryOnOpen(true)}>
                         Create AI Try-On Avatar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              {/* 3D Avatar Tab */}
-              <TabsContent value="3d" className="space-y-4 animate-fade-in">
-                <div className="flex flex-col items-center justify-center space-y-4">
-                  {userData.avatarUrl ? (
-                    <div className="text-center space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Your 3D avatar is ready. Try on outfits from the panel below.
-                      </p>
-                      <Button onClick={() => setIsReadyPlayerMeOpen(true)}>
-                        Create New 3D Avatar
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Create a 3D avatar with Ready Player Me integration.
-                      </p>
-                      <Button onClick={() => setIsReadyPlayerMeOpen(true)}>
-                        Create 3D Avatar
                       </Button>
                     </div>
                   )}
@@ -381,13 +327,6 @@ const VirtualTryOn: React.FC<VirtualTryOnProps> = ({ userItems }) => {
         onClose={() => setIsZmoAiTryOnOpen(false)}
         onAvatarCreated={handleZmoAvatarCreated}
         userItems={userItems}
-      />
-
-      {/* Ready Player Me Avatar Creator Dialog */}
-      <ReadyPlayerMeCreator
-        isOpen={isReadyPlayerMeOpen}
-        onClose={() => setIsReadyPlayerMeOpen(false)}
-        onAvatarCreated={handleRpmAvatarCreated}
       />
     </Card>
   );

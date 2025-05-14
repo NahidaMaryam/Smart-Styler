@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import PageContainer from '@/components/layout/PageContainer';
@@ -10,7 +9,7 @@ import OutfitSuggestions from '@/components/wardrobe/OutfitSuggestions';
 import OutfitRecommendations from '@/components/wardrobe/OutfitRecommendations';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClothingItem {
   id: string;
