@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import Layout from '@/components/layout/Layout';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shirt, Footprints, Tag, Upload, Plus, RefreshCw, User, Image, Clothes } from 'lucide-react';
+import { Shirt, Footprints, Tag, Upload, Plus, RefreshCw, User, Image } from 'lucide-react';
 import OutfitSuggestions from '@/components/wardrobe/OutfitSuggestions';
 import AvatarCreator from '@/components/wardrobe/AvatarCreator';
 import OutfitRecommendations from '@/components/wardrobe/OutfitRecommendations';
@@ -104,7 +103,7 @@ const Wardrobe = () => {
         <Tabs value={mainTab} onValueChange={(value) => setMainTab(value as "items" | "avatar" | "outfits")} className="w-full mb-8">
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="items">
-              <Clothes className="w-4 h-4 mr-2" />
+              <Shirt className="w-4 h-4 mr-2" />
               My Items
             </TabsTrigger>
             <TabsTrigger value="avatar">
