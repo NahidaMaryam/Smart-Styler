@@ -15,6 +15,8 @@ interface AvatarRendererProps {
   avatarUrl?: string; // URL for Ready Player Me avatar
   zmoAvatarUrl?: string; // URL for ZMO.ai avatar URL
   showTryOnOverlay?: boolean;
+  mannequinType?: string;
+  mannequinBodyType?: string;
 }
 
 const AvatarRenderer: React.FC<AvatarRendererProps> = ({ 
@@ -28,10 +30,13 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   className = "",
   avatarUrl,
   zmoAvatarUrl,
-  showTryOnOverlay = false
+  showTryOnOverlay = false,
+  mannequinType = "female",
+  mannequinBodyType = "medium"
 }) => {
   const [imageError, setImageError] = useState<boolean>(false);
   const [rpmImageError, setRpmImageError] = useState<boolean>(false);
+  const [mannequinImageError, setMannequinImageError] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Handle image load errors
@@ -55,6 +60,21 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
     });
   };
   
+  const handleMannequinImageError = () => {
+    console.error("Failed to load mannequin image");
+    setMannequinImageError(true);
+    toast({
+      title: "Mannequin Load Error",
+      description: "Failed to load the mannequin. Using fallback display.",
+      variant: "destructive"
+    });
+  };
+
+  // Get the mannequin image URL
+  const getMannequinImage = () => {
+    return `/images/mannequin-${mannequinType}-${mannequinBodyType}.png`;
+  };
+  
   // If we have a ZMO.ai avatar URL, prioritize rendering that
   if (zmoAvatarUrl && !imageError) {
     return (
@@ -71,6 +91,42 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 flex items-end justify-center pb-2">
               <span className="text-white text-xs font-medium px-2 py-1 bg-black/30 rounded-full">
                 Try-On Avatar
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
+  // If mannequin is selected, render the mannequin with outfit overlay
+  if (mannequinType && !mannequinImageError) {
+    return (
+      <div className={`relative w-full h-full flex items-center justify-center ${className}`}>
+        <div className="relative w-full h-full overflow-hidden rounded-lg">
+          <img 
+            src={getMannequinImage()}
+            alt={`${mannequinType} ${mannequinBodyType} mannequin`}
+            className="w-full h-full object-contain"
+            onError={handleMannequinImageError}
+          />
+          
+          {outfit && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <img
+                src={typeof outfit === 'string' && outfit.startsWith('http') 
+                  ? outfit 
+                  : `https://placehold.co/400x500/e2e8f0/1e293b?text=Outfit+${outfit}`}
+                alt="Outfit"
+                className="w-full h-full object-contain opacity-90"
+              />
+            </div>
+          )}
+          
+          {showTryOnOverlay && (
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 flex items-end justify-center pb-2">
+              <span className="text-white text-xs font-medium px-2 py-1 bg-black/30 rounded-full">
+                Virtual Try-On
               </span>
             </div>
           )}
