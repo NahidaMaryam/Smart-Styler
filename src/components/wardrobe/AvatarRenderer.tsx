@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AvatarRendererProps {
   hairStyle?: string;
@@ -12,6 +12,7 @@ interface AvatarRendererProps {
   eyeColor?: string;
   outfit?: string;
   className?: string;
+  avatarUrl?: string; // URL for Ready Player Me avatar
   zmoAvatarUrl?: string; // URL for ZMO.ai avatar URL
   showTryOnOverlay?: boolean;
   mannequinType?: string;
@@ -27,12 +28,14 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   eyeColor = "brown",
   outfit,
   className = "",
+  avatarUrl,
   zmoAvatarUrl,
   showTryOnOverlay = false,
   mannequinType = "female",
   mannequinBodyType = "medium"
 }) => {
   const [imageError, setImageError] = useState<boolean>(false);
+  const [rpmImageError, setRpmImageError] = useState<boolean>(false);
   const [mannequinImageError, setMannequinImageError] = useState<boolean>(false);
   const { toast } = useToast();
 
@@ -47,32 +50,29 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
     });
   };
   
+  const handleRpmImageError = () => {
+    console.error("Failed to load Ready Player Me avatar image:", avatarUrl);
+    setRpmImageError(true);
+    toast({
+      title: "Avatar Load Error",
+      description: "Failed to load your 3D avatar. Please try generating it again.",
+      variant: "destructive"
+    });
+  };
+  
   const handleMannequinImageError = () => {
     console.error("Failed to load mannequin image");
     setMannequinImageError(true);
-    
-    // Only show toast on initial error, not on every render
-    if (!mannequinImageError) {
-      toast({
-        title: "Mannequin Load Error",
-        description: "Failed to load the mannequin. Using fallback display.",
-        variant: "destructive"
-      });
-    }
+    toast({
+      title: "Mannequin Load Error",
+      description: "Failed to load the mannequin. Using fallback display.",
+      variant: "destructive"
+    });
   };
 
-  // Get the mannequin image URL with fallback
+  // Get the mannequin image URL
   const getMannequinImage = () => {
-    // Use placeholder images if actual images aren't available
-    if (mannequinType === 'male') {
-      return mannequinImageError ? 
-        `https://placehold.co/300x600/e2e8f0/1e293b?text=Male+${mannequinBodyType}+Mannequin` : 
-        `/images/mannequin-${mannequinType}-${mannequinBodyType}.png`;
-    } else {
-      return mannequinImageError ? 
-        `https://placehold.co/300x600/f9e0e9/1e293b?text=Female+${mannequinBodyType}+Mannequin` : 
-        `/images/mannequin-${mannequinType}-${mannequinBodyType}.png`;
-    }
+    return `/images/mannequin-${mannequinType}-${mannequinBodyType}.png`;
   };
   
   // If we have a ZMO.ai avatar URL, prioritize rendering that
@@ -99,8 +99,8 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
     );
   }
   
-  // Render the mannequin with outfit overlay
-  if (mannequinType) {
+  // If mannequin is selected, render the mannequin with outfit overlay
+  if (mannequinType && !mannequinImageError) {
     return (
       <div className={`relative w-full h-full flex items-center justify-center ${className}`}>
         <div className="relative w-full h-full overflow-hidden rounded-lg">
@@ -127,6 +127,42 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 flex items-end justify-center pb-2">
               <span className="text-white text-xs font-medium px-2 py-1 bg-black/30 rounded-full">
                 Virtual Try-On
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
+  // If no ZMO avatar but we have Ready Player Me avatar URL, render that
+  if (avatarUrl && !rpmImageError) {
+    return (
+      <div className={`relative w-full h-full flex items-center justify-center ${className}`}>
+        <div className="relative w-full h-full overflow-hidden rounded-lg">
+          <img 
+            src={avatarUrl}
+            alt="Your 3D Avatar" 
+            className="w-full h-full object-contain"
+            onError={handleRpmImageError}
+          />
+          
+          {outfit && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <img
+                src={typeof outfit === 'string' && outfit.startsWith('http') 
+                  ? outfit 
+                  : `https://placehold.co/400x500/e2e8f0/1e293b?text=Outfit+${outfit}`}
+                alt="Outfit"
+                className="w-full h-full object-contain opacity-90"
+              />
+            </div>
+          )}
+          
+          {showTryOnOverlay && (
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 flex items-end justify-center pb-2">
+              <span className="text-white text-xs font-medium px-2 py-1 bg-black/30 rounded-full">
+                3D Avatar
               </span>
             </div>
           )}

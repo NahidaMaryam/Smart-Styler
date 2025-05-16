@@ -24,12 +24,6 @@ const MannequinSelector: React.FC<MannequinSelectorProps> = ({ onSelect, selecte
   const handleBodyTypeSelect = (bodyType: string) => {
     onSelect(gender, bodyType);
   };
-
-  // Function to get mannequin placeholder URL if image fails to load
-  const getPlaceholder = (type: string, size: string) => {
-    const bgColor = type === 'female' ? 'f9e0e9' : 'e2e8f0';
-    return `https://placehold.co/120x240/${bgColor}/1e293b?text=${type.charAt(0).toUpperCase() + type.slice(1)}+${size}`;
-  };
   
   return (
     <Card className="w-full">
@@ -69,7 +63,7 @@ const MannequinSelector: React.FC<MannequinSelectorProps> = ({ onSelect, selecte
                               className="object-cover w-full h-full"
                               onError={(e) => {
                                 // Fallback to placeholder if image fails to load
-                                (e.target as HTMLImageElement).src = getPlaceholder('female', size);
+                                (e.target as HTMLImageElement).src = `https://placehold.co/120x240/e2e8f0/1e293b?text=Female ${size}`;
                               }}
                             />
                           </AspectRatio>
@@ -106,7 +100,7 @@ const MannequinSelector: React.FC<MannequinSelectorProps> = ({ onSelect, selecte
                               className="object-cover w-full h-full"
                               onError={(e) => {
                                 // Fallback to placeholder if image fails to load
-                                (e.target as HTMLImageElement).src = getPlaceholder('male', size);
+                                (e.target as HTMLImageElement).src = `https://placehold.co/120x240/e2e8f0/1e293b?text=Male ${size}`;
                               }}
                             />
                           </AspectRatio>
