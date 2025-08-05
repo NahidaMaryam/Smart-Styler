@@ -13,6 +13,7 @@ Style Savvy AI Match is a modern web application that leverages AI to provide pe
 
 ## How to run this project
 
+
 1. **Install dependencies:**
    ```bash
    npm install
