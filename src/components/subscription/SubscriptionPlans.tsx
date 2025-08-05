@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Star } from 'lucide-react';
+import { Check, Star, Loader2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SubscriptionPlan {
@@ -91,7 +91,10 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
     
     setIsProcessing(planName);
     try {
-      await onSelectPlan(planName.toLowerCase().replace(" ", "_"));
+      // Send the exact plan name as received from the UI
+      // The backend will normalize it as needed
+      console.log(`Selecting plan: ${planName}`);
+      await onSelectPlan(planName);
     } catch (error) {
       toast({
         title: "Subscription Error",
@@ -121,9 +124,9 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
           )}
           <CardHeader>
             <CardTitle>{plan.name}</CardTitle>
-            <CardDescription>
-              <span className="text-xl font-bold">{plan.price}</span>
-              <p className="mt-2">{plan.description}</p>
+            <div className="text-xl font-bold mt-2">{plan.price}</div>
+            <CardDescription className="mt-2">
+              {plan.description}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
@@ -143,8 +146,12 @@ const SubscriptionPlans: React.FC<SubscriptionPlansProps> = ({
               variant={currentPlan === plan.name.toLowerCase().replace(" ", "_") ? "outline" : "default"}
               disabled={currentPlan === plan.name.toLowerCase().replace(" ", "_") || isProcessing !== null}
             >
-              {isProcessing === plan.name ? 
-                "Processing..." : plan.buttonText}
+              {isProcessing === plan.name ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : plan.buttonText}
             </Button>
           </CardFooter>
         </Card>

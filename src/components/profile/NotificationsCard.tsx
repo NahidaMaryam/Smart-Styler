@@ -5,20 +5,30 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface NotificationSettings {
-  appNotifications: boolean;
-  emailNotifications: boolean;
-  styleUpdates: boolean;
-  newFeatures: boolean;
+interface NotificationSetting {
+  id: string;
+  type: string;
+  description: string;
+  enabled: boolean;
 }
 
 interface NotificationsCardProps {
-  notifications: NotificationSettings;
-  toggleNotification: (key: keyof NotificationSettings) => void;
+  notifications: NotificationSetting[];
+  toggleNotification: (id: string) => void;
 }
 
 const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications, toggleNotification }) => {
+  const { toast } = useToast();
+
+  const handleSaveSettings = () => {
+    toast({
+      title: "Notification Settings Saved",
+      description: "Your notification preferences have been updated successfully."
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -28,63 +38,26 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({ notifications, to
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">App Notifications</h3>
-            <p className="text-sm text-muted-foreground">
-              Receive notifications within the app
-            </p>
-          </div>
-          <Switch 
-            checked={notifications.appNotifications} 
-            onCheckedChange={() => toggleNotification('appNotifications')}
-          />
-        </div>
-        <Separator />
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">Email Notifications</h3>
-            <p className="text-sm text-muted-foreground">
-              Receive updates via email
-            </p>
-          </div>
-          <Switch 
-            checked={notifications.emailNotifications} 
-            onCheckedChange={() => toggleNotification('emailNotifications')}
-          />
-        </div>
-        <Separator />
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">Style Updates</h3>
-            <p className="text-sm text-muted-foreground">
-              Get notified about seasonal style trends
-            </p>
-          </div>
-          <Switch 
-            checked={notifications.styleUpdates} 
-            onCheckedChange={() => toggleNotification('styleUpdates')}
-          />
-        </div>
-        <Separator />
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium">New Features</h3>
-            <p className="text-sm text-muted-foreground">
-              Learn about new app features and improvements
-            </p>
-          </div>
-          <Switch 
-            checked={notifications.newFeatures} 
-            onCheckedChange={() => toggleNotification('newFeatures')}
-          />
-        </div>
+        {notifications.map((notification) => (
+          <React.Fragment key={notification.id}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">{notification.type}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {notification.description}
+                </p>
+              </div>
+              <Switch 
+                checked={notification.enabled} 
+                onCheckedChange={() => toggleNotification(notification.id)}
+              />
+            </div>
+            <Separator />
+          </React.Fragment>
+        ))}
       </CardContent>
       <CardFooter>
-        <Button>
+        <Button onClick={handleSaveSettings}>
           <Save className="w-4 h-4 mr-2" />
           Save Settings
         </Button>
