@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from './Header';
 import MobileNav from './MobileNav';
@@ -16,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Smart Styler</span>
         <div className="w-10"></div> {/* Spacer for layout balance */}
       </div>
-      <div className="hidden md:block sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="hidden md:block sticky top-0 z-10 backdrop-blur-sm border-b border-border">
         <Header />
       </div>
       <main className="flex-grow">

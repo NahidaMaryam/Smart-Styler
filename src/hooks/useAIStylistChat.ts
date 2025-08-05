@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -186,54 +185,85 @@ export const useAIStylistChat = ({ initialMessages = [] }: UseAIStylistChatProps
     setIsTyping(true);
     setApiError(null);
     
-    try {
-      // Call our Supabase Edge Function that uses Gemini
-      const { data, error } = await supabase.functions.invoke('gemini-stylist', {
-        body: {
-          message: userInput,
-          messageHistory: messageHistory.slice(-10) // Limit context to avoid token limits
+    let retries = 0;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
+    
+    while (retries < maxRetries) {
+      try {
+        // Call our Supabase Edge Function that uses Gemini with a timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Request timed out")), 10000); // 10 second timeout
+        });
+        
+        const result = await Promise.race([
+          supabase.functions.invoke('gemini-stylist', {
+            body: {
+              message: userInput,
+              messageHistory: messageHistory.slice(-10) // Limit context to avoid token limits
+            }
+          }),
+          timeoutPromise
+        ]) as { data: any; error: any };
+        
+        const { data, error } = result;
+        
+        if (error) {
+          throw new Error(`Error calling Gemini: ${error.message}`);
         }
-      });
-      
-      if (error) {
-        throw new Error(`Error calling Gemini: ${error.message}`);
+        
+        // Process the response
+        const aiResponse = data?.response || "I'm having trouble connecting right now. Please try again.";
+        
+        // Check if we should suggest an outfit image
+        const shouldSuggestOutfit = checkForOutfitSuggestion(userInput);
+        
+        // Determine if we should include a generated image
+        let generatedImage = null;
+        if (shouldSuggestOutfit) {
+          // Use keywords in the user's message to find a relevant outfit image
+          const outfitTypes = ["party", "work", "casual", "date", "spring", "summer", "autumn", "winter"];
+          const matchedType = outfitTypes.find(type => userInput.toLowerCase().includes(type));
+          generatedImage = getOutfitImageForCategory(matchedType || "casual");
+        }
+        
+        // Add AI message with response
+        const aiMessage: Message = {
+          id: messageHistory.length + 1,
+          content: aiResponse,
+          isUser: false,
+          timestamp: new Date(),
+          generatedImage: generatedImage
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        return true;
+        
+      } catch (error) {
+        console.error(`Error with Gemini (attempt ${retries + 1}):`, error);
+        retries++;
+        
+        if (retries < maxRetries) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        } else {
+          // Fallback response after all retries fail
+          const fallbackResponse = "I'm currently experiencing a connection issue. Please try again later or check your internet connection.";
+          const fallbackMessage: Message = {
+            id: messageHistory.length + 1,
+            content: fallbackResponse,
+            isUser: false,
+            timestamp: new Date(),
+            error: true
+          };
+          setMessages(prev => [...prev, fallbackMessage]);
+          handleApiError("generating a response");
+          return false;
+        }
       }
-      
-      // Process the response
-      const aiResponse = data?.response || "I'm having trouble connecting right now. Please try again.";
-      
-      // Check if we should suggest an outfit image
-      const shouldSuggestOutfit = checkForOutfitSuggestion(userInput);
-      
-      // Determine if we should include a generated image
-      let generatedImage = null;
-      if (shouldSuggestOutfit) {
-        // Use keywords in the user's message to find a relevant outfit image
-        const outfitTypes = ["party", "work", "casual", "date", "spring", "summer", "autumn", "winter"];
-        const matchedType = outfitTypes.find(type => userInput.toLowerCase().includes(type));
-        generatedImage = getOutfitImageForCategory(matchedType || "casual");
-      }
-      
-      // Add AI message with response
-      const aiMessage: Message = {
-        id: messageHistory.length + 1,
-        content: aiResponse,
-        isUser: false,
-        timestamp: new Date(),
-        generatedImage: generatedImage
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      return true;
-      
-    } catch (error) {
-      console.error("Error with Gemini:", error);
-      handleApiError("generating a response");
-      return false;
-      
-    } finally {
-      setIsTyping(false);
     }
+    
+    setIsTyping(false);
   };
 
   // Check if we should suggest an outfit based on user message

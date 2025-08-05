@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -48,7 +47,7 @@ const HomePage = () => {
 
   return (
     <Layout>
-      <div className="bg-gradient-to-b from-background to-secondary/30 pb-10">
+      <div className="pb-10">
         <PageContainer>
           {/* Hero Section */}
           <section className="py-10 md:py-16 flex flex-col items-center text-center">
